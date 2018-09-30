@@ -82,7 +82,11 @@ public class FtcAuto extends FtcOpMode
         //
         // Initializing robot objects.
         //
-        robot = new Robot(TrcRobot.RunMode.AUTO_MODE);
+        try {
+            robot = new Robot(TrcRobot.RunMode.AUTO_MODE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         //
         // Choice menus.
         //

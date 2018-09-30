@@ -85,8 +85,9 @@ public class Robot implements FtcMenu.MenuButtons
     // Other subsystems.
     //
 
-    public Robot(TrcRobot.RunMode runMode)
-    {
+    public Robot(TrcRobot.RunMode runMode) throws Exception {
+        if (true) throw new Exception("Team 3543's code is not ready to run, and has been modified slightly to pave the way for team 5611's code.");
+
         //
         // Initialize global objects.
         //
@@ -94,8 +95,8 @@ public class Robot implements FtcMenu.MenuButtons
         opMode.hardwareMap.logDevices();
         dashboard = HalDashboard.getInstance();
         tracer = FtcOpMode.getGlobalTracer();
-        dashboard.setTextView(
-                (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
+//        dashboard.setTextView(
+//                (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
         battery = new FtcRobotBattery();
         androidTone = new FtcAndroidTone("AndroidTone");
         if (USE_SPEECH)
