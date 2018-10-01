@@ -59,12 +59,7 @@ public class FtcTeleOp extends FtcOpMode implements TrcGameController.ButtonHand
         //
         // Initializing robot objects.
         //
-        try {
-            robot = new Robot(TrcRobot.RunMode.TELEOP_MODE);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        robot = new Robot(TrcRobot.RunMode.TELEOP_MODE);
         dashboard = robot.dashboard;
         //
         // Initializing Gamepads.
