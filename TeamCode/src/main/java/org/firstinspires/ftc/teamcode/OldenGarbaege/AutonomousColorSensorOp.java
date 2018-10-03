@@ -29,11 +29,12 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.OldenGarbaege;
 
 import android.graphics.Color;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DeviceInterfaceModule;
@@ -70,6 +71,7 @@ import java.util.Date;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 @Autonomous(name = "Autonomous (Color Sensor)", group = "Sensor")
+@Disabled
 public class AutonomousColorSensorOp extends LinearOpMode {
 
     private ColorSensor sensorRGB;
@@ -256,10 +258,11 @@ public class AutonomousColorSensorOp extends LinearOpMode {
 //                SuperWacker3000.setPosition(SuperWacker3000.getPosition()+WackerAdjustmentAmount);
 //                break;
             case DrivingForward:
-                timeBasedMechanumDriveBase.move(0,0.25f,0,250);
+                timeBasedMechanumDriveBase.addInstruction(0,0.25f,0,250);
+                timeBasedMechanumDriveBase.executeInstructions();
                 break;
             case DrivingBackward:
-                timeBasedMechanumDriveBase.move(0,-0.25f,0,250);
+                timeBasedMechanumDriveBase.executeInstructions();
                 break;
             default:
                 break;  //If there are no special actions to be taken whilst transition, we can just transition and call it good

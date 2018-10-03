@@ -1,11 +1,12 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.OldenGarbaege;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @Autonomous(name = "Autonomous (Boring) )",group="Autonomous")
-
+@Disabled
 public class AutonomousBoringOp extends LinearOpMode {
    TimeBasedMechanumDriveBase timeBasedMechanumDriveBase;
     private Servo GrabberLeft;
@@ -24,7 +25,7 @@ public class AutonomousBoringOp extends LinearOpMode {
 
         GrabberLeft.setPosition(GrabberClosedPosition);
         GrabberRight.setPosition(GrabberClosedPosition);
-        timeBasedMechanumDriveBase.move(0,0.5f,0,1500).Complete();
+        timeBasedMechanumDriveBase.addInstruction(0,0.5f,0,1500);
         GrabberLeft.setPosition(GrabberOpenPosition);
         GrabberRight.setPosition(GrabberOpenPosition);
         try {
@@ -32,9 +33,9 @@ public class AutonomousBoringOp extends LinearOpMode {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        timeBasedMechanumDriveBase.move(0,-0.5f,0,500).Complete();
-        timeBasedMechanumDriveBase.move(0,0,-0.5f,1500).Complete();
-        timeBasedMechanumDriveBase.move(0,0.5f,0,500).Complete();
-
+        timeBasedMechanumDriveBase.addInstruction(0,-0.5f,0,500);
+        timeBasedMechanumDriveBase.addInstruction(0,0,-0.5f,1500);
+        timeBasedMechanumDriveBase.addInstruction(0,0.5f,0,500);
+        timeBasedMechanumDriveBase.executeInstructions();
     }
 }

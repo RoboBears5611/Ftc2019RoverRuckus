@@ -1,17 +1,12 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.OldenGarbaege;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 /**
  * Created by FTC on 11/21/2016.
  */
 
-@TeleOp(name = "Robot Controller (Two Controllers)",group = "drive")
+
 public class RobotControllerTwoControllersOp extends OpMode {
 
 

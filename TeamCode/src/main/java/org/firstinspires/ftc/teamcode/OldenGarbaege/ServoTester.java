@@ -30,15 +30,14 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.OldenGarbaege;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.robotcore.internal.hardware.DragonboardGPIOPin;
-
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,17 +56,15 @@ import java.util.Set;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="MotorTester", group="TEST")  // @Autonomous(...) is the other common choice
-
-public class MotorTester extends OpMode
+@TeleOp(name="ServoTester", group="TEST")  // @Autonomous(...) is the other common choice
+@Disabled
+public class ServoTester extends OpMode
 {
-    private DcMotor ActiveMotor;
-    private DcMotor[] Motors;
-    private String[] MotorNames;
+    private Servo ActiveServo;
+    private Servo[] Servos;
+    private String[] ServoNames;
     private int activeIndex;
     private long lastUpdatetime;
-    private boolean encoderMode = false;
-    private boolean prevEncoderMode;
     private int encoderSpeed = 5;
     private final static double encoderSpeedChangeRate = 0.5;
 
@@ -76,23 +73,23 @@ public class MotorTester extends OpMode
      */
     @Override
     public void init() {
-        telemetry.addData("Status", "Looking for motors....");
-        Set<Map.Entry<String,DcMotor>> motorset =  hardwareMap.dcMotor.entrySet();
-        List<String> names = new LinkedList<>();
-        List<DcMotor> motors = new LinkedList();
+        telemetry.addData("Status", "Looking for servos....");
+        Set<Map.Entry<String,Servo>> servoset =  hardwareMap.servo.entrySet();
+        ArrayList<String> names = new ArrayList<String>();
+        ArrayList<Servo> servos = new ArrayList<Servo>();
         StringBuilder sb = new StringBuilder();
-        for(Map.Entry<String,DcMotor> entry : motorset){
+        for(Map.Entry<String,Servo> entry : servoset){
             String name = entry.getKey();
             names.add(name);
-            motors.add(entry.getValue());
+            servos.add(entry.getValue());
             sb.append(name);
             sb.append(",");
         }
-        MotorNames = names.toArray(new String[names.size()]);
-        Motors = motors.toArray(new DcMotor[motors.size()]);
+        ServoNames = names.toArray(new String[names.size()]);
+        Servos = servos.toArray(new Servo[servos.size()]);
         activeIndex = 0;
-        telemetry.addData("Connected Motors",sb.toString());
-        telemetry.addData("Status","Motors Found!  Awaiting commands...");
+        telemetry.addLine("Connected Servos:  "+sb.toString());
+        telemetry.addData("Status","Servos Found!  Awaiting commands...");
     }
 
     /*
@@ -113,64 +110,40 @@ public class MotorTester extends OpMode
             update = false;
         }else if(gamepad1.right_bumper){
             activeIndex++;
-            telemetry.addData("Status","Incrementing motor");
+            telemetry.addData("Status","Incrementing servo");
         }else if(gamepad1.left_bumper){
             activeIndex--;
-            telemetry.addData("Status","Decrementing motor");
+            telemetry.addData("Status","Decrementing servo");
         }else if(gamepad1.a) {
             activeIndex = 0;
-            telemetry.addData("Status", "Returning to start of motor list");
-        }else if(prevEncoderMode!=encoderMode){
-            update = true;
+            telemetry.addData("Status", "Returning to start of servo list");
         }else{
             update = false;
         }
 
         if(update){
-            while(activeIndex>=MotorNames.length){
-                activeIndex-=MotorNames.length;
-            }
-            if(ActiveMotor != null){
-                ActiveMotor.setPower(0);
+            while(activeIndex>=ServoNames.length){
+                activeIndex-=ServoNames.length;
             }
             lastUpdatetime = System.currentTimeMillis();
 
 
-            ActiveMotor = Motors[activeIndex];
-            if(encoderMode){
-                ActiveMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                ActiveMotor.setPower(1);
-            }else{
-                ActiveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }
+            ActiveServo = Servos[activeIndex];
 
-            telemetry.addData("Active Motor",MotorNames[activeIndex]);
+            telemetry.addData("Active Servo",ServoNames[activeIndex]);
         }
-        if(ActiveMotor != null){
-            if(encoderMode){
-                ActiveMotor.setTargetPosition(ActiveMotor.getTargetPosition()+(int)gamepad1.right_stick_y*encoderSpeed);
-                encoderSpeed+=(gamepad1.dpad_up?encoderSpeedChangeRate:0)-(gamepad1.dpad_down?encoderSpeedChangeRate:0);
-            }else{
-                ActiveMotor.setPower(gamepad1.right_stick_y);
-            }
+        if(ActiveServo != null){
+            ActiveServo.setPosition(gamepad1.right_stick_y/2+0.5);
 
-            telemetry.addData("Active Motor Power:  ",gamepad1.right_stick_y);
-            telemetry.addData("Mode:  ",encoderMode?"Run Using Encoders":"Run At Power");
-            if(encoderMode){
-                telemetry.addData("Target Position:  ",ActiveMotor.getTargetPosition());
-                telemetry.addData("Encoder Speed:  ",encoderSpeed);
-            }
-            telemetry.addData("Active Motor",MotorNames[activeIndex]);
+
+            telemetry.addData("Active Servo Position:  ",ActiveServo.getPosition());
+            telemetry.addData("Active Servo",ServoNames[activeIndex]);
         }
+        telemetry.addData("Status",ActiveServo==null?
+                "Awaiting specification of Servo (via LT and RT)"
+                :"Currently Driving Servo with name '"+ServoNames[activeIndex]+"' to position "+ActiveServo.getPosition());
 
     }
 
-    /*
-     * Code to run ONCE after the driver hits STOP
-     */
-    @Override
-    public void stop() {
-        ActiveMotor.setPower(0);
-    }
 
 }

@@ -1,18 +1,13 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.OldenGarbaege;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.hardware.DcMotor;
 
 /**
  * Created by FTC on 11/21/2016.
  */
 
-@TeleOp(name = "GrabberOp",group = "drive")
 public class GrabberOp extends OpMode {
     MechanumDriveBase mechanumDriveBase;
     DcMotor Grabber;
