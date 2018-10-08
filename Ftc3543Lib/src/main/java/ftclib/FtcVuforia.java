@@ -99,14 +99,13 @@ public class FtcVuforia implements TrcVideoSource<Mat>
      * @param licenseKey specifies the Vuforia license key.
      * @param cameraViewId specifies the camera view ID on the activity, -1 if none given.
      * @param cameraDir specifies which camera to use (front or back).
-     * @param trackablesFile specifies the XML file that contains the target info, can be null.
      * @param numTargets specifies the number of simultaneous trackable targets.
      * @param cameraMonitorFeedback specifies the feedback image showing the orientation of the target.
+     * @param trackablesFiles specifies the array of XML files that contains the target info, can be null.
      */
     public FtcVuforia(
-            String licenseKey, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir,
-            String trackablesFile, int numTargets,
-            VuforiaLocalizer.Parameters.CameraMonitorFeedback cameraMonitorFeedback)
+            String licenseKey, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir, int numTargets,
+            VuforiaLocalizer.Parameters.CameraMonitorFeedback cameraMonitorFeedback, String... trackablesFiles)
     {
         this.cameraDir = cameraDir;
         //
@@ -117,11 +116,20 @@ public class FtcVuforia implements TrcVideoSource<Mat>
         params.vuforiaLicenseKey = licenseKey;
         params.cameraDirection = cameraDir;
         params.cameraMonitorFeedback = cameraMonitorFeedback;
-        localizer = ClassFactory.createVuforiaLocalizer(params);
+        localizer = ClassFactory.getInstance().createVuforia(params);
         Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, numTargets);
-        if (trackablesFile != null)
+
+        if (trackablesFiles != null && trackablesFiles.length > 0)
         {
-            targetList = localizer.loadTrackablesFromAsset(trackablesFile);
+            targetList = localizer.loadTrackablesFromFile(trackablesFiles[0]);
+            for (int i = 1; i < trackablesFiles.length; i++)
+            {
+                VuforiaTrackables targets = localizer.loadTrackablesFromFile(trackablesFiles[i]);
+                for (VuforiaTrackable target: targets)
+                {
+                    targetList.add(target);
+                }
+            }
         }
     }   //FtcVuforia
 
@@ -130,17 +138,17 @@ public class FtcVuforia implements TrcVideoSource<Mat>
      * other parameters.
      *
      * @param licenseKey specifies the Vuforia license key.
-     * @param cameraViewId specifies the camera view ID on the activity.
+     * @param cameraViewId specifies the camera view ID on the activity, -1 if none given.
      * @param cameraDir specifies which camera to use (front or back).
-     * @param trackablesFile specifies the XML file that contains the target info.
      * @param numTargets specifies the number of simultaneous trackable targets.
+     * @param trackablesFiles specifies the array of XML files that contains the target info, can be null.
      */
     public FtcVuforia(
-            String licenseKey, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir,
-            String trackablesFile, int numTargets)
+            String licenseKey, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir, int numTargets,
+            String... trackablesFiles)
     {
-        this(licenseKey, cameraViewId, cameraDir, trackablesFile, numTargets,
-             VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES);
+        this(licenseKey, cameraViewId, cameraDir, numTargets, VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES,
+                trackablesFiles);
     }   //FtcVuforia
 
     /**
@@ -153,8 +161,7 @@ public class FtcVuforia implements TrcVideoSource<Mat>
      */
     public FtcVuforia(String licenseKey, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir)
     {
-        this(licenseKey, cameraViewId, cameraDir, null, 0,
-                VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES);
+        this(licenseKey, cameraViewId, cameraDir, 0, VuforiaLocalizer.Parameters.CameraMonitorFeedback.AXES);
     }   //FtcVuforia
 
     /**
@@ -169,7 +176,8 @@ public class FtcVuforia implements TrcVideoSource<Mat>
             if (enabled)
             {
                 targetList.activate();
-            } else
+            }
+            else
             {
                 targetList.deactivate();
             }
@@ -269,6 +277,16 @@ public class FtcVuforia implements TrcVideoSource<Mat>
     }   //getTargetList
 
     /**
+     * This method returns the number of targets in the list.
+     *
+     * @return number of targets in the list.
+     */
+    public int getNumTargets()
+    {
+        return targetList.size();
+    }   //getNumTargets
+
+    /**
      * This method returns the target object with the specified index in the target list.
      *
      * @param index specifies the target index in the list.
@@ -297,7 +315,8 @@ public class FtcVuforia implements TrcVideoSource<Mat>
                 if (name.equals(target.getName()))
                 {
                     break;
-                } else
+                }
+                else
                 {
                     target = null;
                 }

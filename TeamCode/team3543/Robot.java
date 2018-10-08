@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Titan Robotics Club (http://www.titanrobotics.com)
+ * Copyright (c) 2018 Titan Robotics Club (http://www.titanrobotics.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -84,6 +84,7 @@ public class Robot implements FtcMenu.MenuButtons
     //
     // Other subsystems.
     //
+    Elevator elevator;
 
     public Robot(TrcRobot.RunMode runMode)
     {
@@ -149,17 +150,17 @@ public class Robot implements FtcMenu.MenuButtons
                 "encoderXPidCtrl",
                 new TrcPidController.PidCoefficients(
                         RobotInfo.ENCODER_X_KP, RobotInfo.ENCODER_X_KI, RobotInfo.ENCODER_X_KD),
-                RobotInfo.ENCODER_X_TOLERANCE, driveBase::getXPosition);
+                RobotInfo.ENCODER_X_TOLERANCE, () -> driveBase.getXPosition());
         encoderYPidCtrl = new TrcPidController(
                 "encoderYPidCtrl",
                 new TrcPidController.PidCoefficients(
                         RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD),
-                RobotInfo.ENCODER_Y_TOLERANCE, driveBase::getYPosition);
+                RobotInfo.ENCODER_Y_TOLERANCE, () -> driveBase.getYPosition());
         gyroPidCtrl = new TrcPidController(
                 "gyroPidCtrl",
                 new TrcPidController.PidCoefficients(
                         RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD),
-                RobotInfo.GYRO_TOLERANCE, driveBase::getHeading);
+                RobotInfo.GYRO_TOLERANCE, () -> driveBase.getHeading());
         gyroPidCtrl.setAbsoluteSetPoint(true);
         gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
 
@@ -170,6 +171,7 @@ public class Robot implements FtcMenu.MenuButtons
         //
         // Initialize other subsystems.
         //
+        elevator = new Elevator();
 
         //
         // Tell the driver initialization is complete.
