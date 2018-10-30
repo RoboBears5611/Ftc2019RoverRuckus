@@ -20,8 +20,23 @@
  * SOFTWARE.
  */
 
-package team3543;
+package common;
 
-public class MineralSweeper
+public class RobotInfo
 {
-}   //class MineralSweeper
+    //
+    // Velocity controlled constants.
+    //
+    public static final double MOTOR_MAX_VELOCITY               = 3080.0;   //encoder counts per second
+    public static final double MOTOR_KP                         = 0.75;
+    public static final double MOTOR_KI                         = 0.0;
+    public static final double MOTOR_KD                         = 0.0;
+    //
+    // PixyVision subsystem.
+    //
+    public static final int PIXY_GOLD_MINERAL_SIGNATURE         = 1;
+    public static final int PIXY_SILVER_MINERAL_SIGNATURE       = 2;
+    public static final int PIXY_TEAM_MARKER1_SIGNATURE         = 3;
+    public static final int PIXY_TEAM_MARKER2_SIGNATURE         = 4;
+
+}   //class RobotInfo

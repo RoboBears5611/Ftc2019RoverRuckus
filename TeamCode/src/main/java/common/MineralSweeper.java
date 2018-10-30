@@ -20,8 +20,36 @@
  * SOFTWARE.
  */
 
-package team3543;
+package common;
 
-public class HangingHook
+import ftclib.FtcServo;
+
+public class MineralSweeper
 {
-}   //class HangingHook
+    private final double extendPos;
+    private final double retractPos;
+    private FtcServo sweeperServo;
+
+    public MineralSweeper(double extendPos, double retractPos)
+    {
+        this.extendPos = extendPos;
+        this.retractPos = retractPos;
+        sweeperServo = new FtcServo("sweeperServo");
+    }
+
+    public void setPosition(double pos)
+    {
+        sweeperServo.setPosition(pos);
+    }
+
+    public void extend()
+    {
+        sweeperServo.setPosition(extendPos);
+    }
+
+    public void retract()
+    {
+        sweeperServo.setPosition(retractPos);
+    }
+
+}   //class MineralSweeper

@@ -20,8 +20,36 @@
  * SOFTWARE.
  */
 
-package team3543;
+package common;
+
+import ftclib.FtcServo;
 
 public class TeamMarkerDeployer
 {
+    private final double openPos;
+    private final double closePos;
+    private FtcServo teamMarkerDeployer;
+
+    public TeamMarkerDeployer(double openPos, double closePos)
+    {
+        this.openPos = openPos;
+        this.closePos = closePos;
+        teamMarkerDeployer = new FtcServo("deployerServo");
+    }
+
+    public void setPosition(double pos)
+    {
+        teamMarkerDeployer.setPosition(pos);
+    }
+
+    public void open()
+    {
+        teamMarkerDeployer.setPosition(openPos);
+    }
+
+    public void close()
+    {
+        teamMarkerDeployer.setPosition(closePos);
+    }
+
 }   //class TeamMarkerDeployer
