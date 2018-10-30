@@ -20,44 +20,53 @@
  * SOFTWARE.
  */
 
-package team3543;
+package team6541;
 
 import ftclib.FtcDcMotor;
 import ftclib.FtcDigitalInput;
+import ftclib.FtcServo;
 import trclib.TrcEvent;
 import trclib.TrcPidActuator;
 import trclib.TrcPidController;
 
-public class Elevator
+public class Elevator6541
 {
     private FtcDigitalInput upperLimitSwitch;
     private FtcDigitalInput lowerLimitSwitch;
     private FtcDcMotor elevatorMotor;
     private TrcPidController pidController;
     private TrcPidActuator pidElevator;
+    private FtcServo hookServo;
 
-    public Elevator()
+    public Elevator6541()
     {
         upperLimitSwitch = new FtcDigitalInput("elevatorUpperLimit");
         lowerLimitSwitch = new FtcDigitalInput("elevatorLowerLimit");
-        upperLimitSwitch.setInverted(true);
-        lowerLimitSwitch.setInverted(true);
+        upperLimitSwitch.setInverted(false);
+        lowerLimitSwitch.setInverted(false);
 
         elevatorMotor = new FtcDcMotor("elevatorMotor", lowerLimitSwitch, upperLimitSwitch);
         elevatorMotor.setBrakeModeEnabled(true);
 
         pidController = new TrcPidController("elevatorPidController",
                 new TrcPidController.PidCoefficients(
-                    RobotInfo.ELEVATOR_KP, RobotInfo.ELEVATOR_KI, RobotInfo.ELEVATOR_KD),
-                RobotInfo.ELEVATOR_TOLERANCE, this::getPosition);
+                        RobotInfo6541.ELEVATOR_KP, RobotInfo6541.ELEVATOR_KI, RobotInfo6541.ELEVATOR_KD),
+                RobotInfo6541.ELEVATOR_TOLERANCE, this::getPosition);
         pidElevator = new TrcPidActuator("pidElevator", elevatorMotor, lowerLimitSwitch, pidController,
-                RobotInfo.ELEVATOR_CAL_POWER, RobotInfo.ELEVATOR_MIN_HEIGHT, RobotInfo.ELEVATOR_MAX_HEIGHT);
-        pidElevator.setPositionScale(RobotInfo.ELEVATOR_INCHES_PER_COUNT, RobotInfo.ELEVATOR_ZERO_OFFSET);
+                RobotInfo6541.ELEVATOR_CAL_POWER, RobotInfo6541.ELEVATOR_MIN_HEIGHT, RobotInfo6541.ELEVATOR_MAX_HEIGHT);
+        pidElevator.setPositionScale(RobotInfo6541.ELEVATOR_INCHES_PER_COUNT, RobotInfo6541.ELEVATOR_ZERO_OFFSET);
+
+        hookServo = new FtcServo("hookServo");
     }
 
-    public void zerCalibrate()
+    public void zeroCalibrate()
     {
         pidElevator.zeroCalibrate();
+    }
+
+    public void setManualOverride(boolean enabled)
+    {
+        pidElevator.setManualOverride(enabled);
     }
 
     public void setPower(double power)
@@ -68,6 +77,11 @@ public class Elevator
     public void setPosition(double target, TrcEvent event, double timeout)
     {
         pidElevator.setTarget(target, event, timeout);
+    }
+
+    public void setPosition(double target)
+    {
+        pidElevator.setTarget(target, null, 0.0);
     }
 
     public double getPosition()
@@ -85,4 +99,19 @@ public class Elevator
         return lowerLimitSwitch.isActive();
     }
 
-}   //class Elevator
+    public void setHookPosition(double pos)
+    {
+        hookServo.setPosition(pos);
+    }
+
+    public void openHook()
+    {
+        hookServo.setPosition(RobotInfo6541.HANGING_HOOK_OPEN_POSITION);
+    }
+
+    public void closeHook()
+    {
+        hookServo.setPosition(RobotInfo6541.HANGING_HOOK_CLOSE_POSITION);
+    }
+
+}   //class Elevator6541

@@ -20,18 +20,21 @@
  * SOFTWARE.
  */
 
-package team3543;
+package common;
 
 import org.opencv.core.Rect;
 
 import java.util.ArrayList;
 
+import ftclib.FtcDcMotor;
 import ftclib.FtcPixyCam;
 import trclib.TrcPixyCam;
 import trclib.TrcUtil;
 
 public class PixyVision
 {
+    private static final int PIXYCAM_WIDTH = 320;
+    private static final int PIXYCAM_HEIGHT = 200;
     private static final boolean debugEnabled = false;
 
     // If last target rect is this old, its stale data.
@@ -67,42 +70,77 @@ public class PixyVision
         UPSIDEDOWN_LANDSCAPE
     }   //enum Orientation
 
-    private static final double PIXY_DISTANCE_SCALE = 2300.0;   //DistanceInInches*targetWidthdInPixels
-    //CodeReview: why diagonal???
-    private static final double TARGET_WIDTH_INCHES = 2.0 * Math.sqrt(2.0);// 13x13 square, diagonal is 13*sqrt(2) inches
+    private static final double PIXY_DISTANCE_SCALE = 7.0*62.0;   //DistanceInInches*targetWidthdInPixels
+    private static final double TARGET_SIDE_WIDTH = 2.0;
+    private static final double TARGET_FACE_DIAGONAL = Math.sqrt(2.0)*TARGET_SIDE_WIDTH;
+    private static final double TARGET_CUBE_DIAGONAL = Math.sqrt(3.0)*TARGET_SIDE_WIDTH;
+    //
+    // The target cube is seen by the camera at random viewing angle. This means the TARGET_WIDTH as seen by the
+    // camera is between the min width which is TARGET_SIDE_WIDTH and the max width which is the farthest diagonal
+    // of the cube (TARGET_CUBE_DIAGONAL). So we average TARGET_SIDE_WIDTH, TARGET_FACE_DIAGONAL and
+    // TARGET_CUBE_DIAGONAL to be the TARGET_WIDTH.
+    //
+    private static final double TARGET_WIDTH_INCHES =
+            (TARGET_SIDE_WIDTH + TARGET_FACE_DIAGONAL + TARGET_CUBE_DIAGONAL)/3.0;
 
     private FtcPixyCam pixyCamera;
     private Robot robot;
-    private int signature;
     private Orientation orientation;
+    private FtcDcMotor light;
+    private boolean lightOn = false;
     private Rect lastTargetRect = null;
     private double lastTargetRectExpireTime = TrcUtil.getCurrentTime();
 
-    public PixyVision(
-            String instanceName, Robot robot, int signature, int brightness, Orientation orientation,
-            int i2cAddress)
+    public PixyVision(String instanceName, Robot robot, Orientation orientation, int brightness)
     {
         pixyCamera = new FtcPixyCam(instanceName);
         this.robot = robot;
-        this.signature = signature;
         this.orientation = orientation;
+        light = new FtcDcMotor("pixyRingLight");
+        setLightOn(false);
         pixyCamera.setBrightness((byte)brightness);
     }   //PixyVision
 
-    public void setEnabled(boolean enabled)
+    public void setCameraEnabled(boolean enabled)
     {
+        setLightOn(enabled);
         pixyCamera.setEnabled(enabled);
-    }   //setEnabled
+    }   //setCameraEnabled
+
+    public void toggleCamera()
+    {
+        boolean enabled = pixyCamera.isEnabled();
+        enabled = !enabled;
+        setCameraEnabled(enabled);
+    }   //toggleCamera
 
     public boolean isEnabled()
     {
         return pixyCamera.isEnabled();
     }   //isEnabled
 
-    public boolean isTaskTerminatedAbnormally()
+    public void setLightOn(boolean enabled)
     {
-        return pixyCamera.isTaskTerminatedAbnormally();
-    }   //isTaskTerminatedAbnormally
+        if (enabled)
+        {
+            light.set(1.0);
+        }
+        else
+        {
+            light.set(0.0);
+        }
+    }   //setLightOn
+
+    public void toggleLight()
+    {
+        lightOn = !lightOn;
+        setLightOn(lightOn);
+    }   //toggleLight
+
+    public boolean isLightOn()
+    {
+        return lightOn;
+    }   //isLightOn
 
     /**
      * This method gets the rectangle of the last detected target from the camera. If the camera does not have
@@ -116,7 +154,7 @@ public class PixyVision
      * @return rectangle of the detected target last received from the camera or last cached target if cached
      *         data has not expired. Null if no object was seen and last cached data has expired.
      */
-    private Rect getTargetRect()
+    private Rect getTargetRect(int signature)
     {
         final String funcName = "getTargetRect";
         Rect targetRect = null;
@@ -129,10 +167,10 @@ public class PixyVision
                     funcName, "%s object(s) found", detectedObjects != null? "" + detectedObjects.length: "null");
         }
 
-        if (detectedObjects != null && detectedObjects.length >= 1)
+        if (detectedObjects != null && detectedObjects.length > 0)
         {
             //
-            // Make sure the camera detected at least one objects.
+            // Make sure the camera detected at least one object.
             //
             ArrayList<Rect> objectList = new ArrayList<>();
             //
@@ -150,7 +188,7 @@ public class PixyVision
                     switch (orientation)
                     {
                         case CLOCKWISE_PORTRAIT:
-                            temp = RobotInfo.PIXYCAM_WIDTH - detectedObjects[i].centerX;
+                            temp = PIXYCAM_WIDTH - detectedObjects[i].centerX;
                             detectedObjects[i].centerX = detectedObjects[i].centerY;
                             detectedObjects[i].centerY = temp;
                             temp = detectedObjects[i].width;
@@ -160,7 +198,7 @@ public class PixyVision
 
                         case ANTICLOCKWISE_PORTRAIT:
                             temp = detectedObjects[i].centerX;
-                            detectedObjects[i].centerX = RobotInfo.PIXYCAM_HEIGHT - detectedObjects[i].centerY;
+                            detectedObjects[i].centerX = PIXYCAM_HEIGHT - detectedObjects[i].centerY;
                             detectedObjects[i].centerY = temp;
                             temp = detectedObjects[i].width;
                             detectedObjects[i].width = detectedObjects[i].height;
@@ -168,8 +206,8 @@ public class PixyVision
                             break;
 
                         case UPSIDEDOWN_LANDSCAPE:
-                            detectedObjects[i].centerX = RobotInfo.PIXYCAM_WIDTH - detectedObjects[i].centerX;
-                            detectedObjects[i].centerY = RobotInfo.PIXYCAM_HEIGHT - detectedObjects[i].centerY;
+                            detectedObjects[i].centerX = PIXYCAM_WIDTH - detectedObjects[i].centerX;
+                            detectedObjects[i].centerY = PIXYCAM_HEIGHT - detectedObjects[i].centerY;
                             break;
 
                         case NORMAL_LANDSCAPE:
@@ -194,12 +232,16 @@ public class PixyVision
                 // Find the largest target rect in the list.
                 //
                 Rect maxRect = objectList.get(0);
-                for(Rect rect: objectList)
+                double maxArea = maxRect.width * maxRect.height;
+
+                for(int i = 1; i < objectList.size(); i++)
                 {
+                    Rect rect = objectList.get(i);
                     double area = rect.width * rect.height;
-                    if (area > maxRect.width * maxRect.height)
+                    if (area > maxArea)
                     {
                         maxRect = rect;
+                        maxArea = area;
                     }
                 }
 
@@ -228,36 +270,36 @@ public class PixyVision
         return targetRect;
     }   //getTargetRect
 
-    public TargetInfo getTargetInfo()
+    public TargetInfo getTargetInfo(int signature)
     {
         final String funcName = "getTargetInfo";
         TargetInfo targetInfo = null;
-        Rect targetRect = getTargetRect();
+        Rect targetRect = getTargetRect(signature);
 
         if (targetRect != null)
         {
             //
-            // Physical target width:           W = 10 inches.
-            // Physical target distance 1:      D1 = 20 inches.
-            // Target pixel width at 20 inches: w1 = 115
-            // Physical target distance 2:      D2 = 24 inches
-            // Target pixel width at 24 inches: w2 = 96
+            // Physical target width:           W
+            // Physical target distance 1:      D1
+            // Target pixel width at 20 inches: w1
+            // Physical target distance 2:      D2
+            // Target pixel width at 24 inches: w2
             // Camera lens focal length:        f
             //    W/D1 = w1/f and W/D2 = w2/f
             // => f = w1*D1/W and f = w2*D2/W
             // => w1*D1/W = w2*D2/W
-            // => w1*D1 = w2*D2 = PIXY_DISTANCE_SCALE = 2300
+            // => w1*D1 = w2*D2 = PIXY_DISTANCE_SCALE
             //
-            // Screen center X:                 Xs = 320/2 = 160
+            // Screen center X:                 Xs
             // Target center X:                 Xt
-            // Heading error:                   e = Xt - Xs
+            // Heading error:                   e
             // Turn angle:                      a
             //    tan(a) = e/f
             // => a = atan(e/f) and f = w1*D1/W
             // => a = atan((e*W)/(w1*D1))
             //
             double targetCenterX = targetRect.x + targetRect.width/2.0;
-            double targetXDistance = (targetCenterX - RobotInfo.PIXYCAM_WIDTH/2.0)*TARGET_WIDTH_INCHES/targetRect.width;
+            double targetXDistance = (targetCenterX - PIXYCAM_WIDTH/2.0)*TARGET_WIDTH_INCHES/targetRect.width;
             double targetYDistance = PIXY_DISTANCE_SCALE/targetRect.width;
             double targetAngle = Math.toDegrees(Math.atan(targetXDistance/targetYDistance));
             targetInfo = new TargetInfo(targetRect, targetXDistance, targetYDistance, targetAngle);
