@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package team3543;
+package team5611;
 
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -51,13 +51,18 @@ public class VuforiaVision
     private FtcVuforia vuforia;
     private OpenGLMatrix lastRobotLocation = null;
 
+
     public VuforiaVision(Robot robot, int cameraViewId)
     {
         final String VUFORIA_LICENSE_KEY =
-                "AdCwzDH/////AAAAGeDkDS3ukU9+lIXc19LMh+cKk29caNhOl8UqmZOymRGwVwT1ZN8uaPdE3Q+zceDu9AKNsqL9qLblSFV" +
-                "/x8Y3jfOZdjMFs0CQSQOEyWv3xfJsdSmevXDQDQr+4KI31HY2YSf/KB/kyxfuRMk4Pi+vWS+oLl65o7sWPiyFgzoM74ENyb" +
-                "j4FgteD/2b6B+UFuwkHWKBNpp18wrpkaiFfr/FCbRFcdWP5mrjlEZM6eOj171dybw97HPeZbGihnnxOeeUv075O7P167AVq" +
-                "aiPy2eRK7OCubR32KXOqQKoyF6AXp+qu2cOTApXS5dqOOseEm+HE4eMF0S2Pld3i5AWBIR+JlPXDuc9LwoH2Q8iDwUK1+4g";
+                "AaXobyf/////AAABmf2229UqeE0Glf90ORMEc7+MsrR1FfF0gydPcpd" +
+                        "8rUew1njTJbXa6Nc6s1+GJEKltYEXkRLE4kp8QWmKMVQoIw+e" +
+                        "9zcQ6IqFfx5a4LItqtRY+j1gJStDQf8tui4Gjr2/hKPW3Z6CT/" +
+                        "Xy2Aq45DcT+s3UYd83YtsNOW55gxqwTmKM0KmNnr+nk6Z7K9i0" +
+                        "XtplQhF/HjZsOrBxCfPch/dQ+v/SrOIbuvPRVPUncu5+drw0vw" +
+                        "kGG4lhM0vt/KPv7GEWYUChSJYHgXZ5+GkuQuWLTYVgkEKfriT+" +
+                        "6S7Lx4XoHpyOgNSnxgg+F6UBWHzkTlQLDC40zfRwdGmWh8Z8ao" +
+                        "y+AGK0ZKLQQZu4/40ytpXpTNQ2";
         final VuforiaLocalizer.CameraDirection CAMERA_DIR = VuforiaLocalizer.CameraDirection.BACK;
         final String TRACKABLES_FILE = "RoverRuckus";
 

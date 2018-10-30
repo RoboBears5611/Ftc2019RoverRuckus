@@ -47,10 +47,12 @@ public class Robot implements FtcMenu.MenuButtons
     HalDashboard dashboard;
     TrcDbgTrace tracer;
     FtcRobotBattery battery = null;
+    VuforiaVision vuforiaVision = null;
+
 
     //Peripherals
-    FtcDcMotor TestLeftMotor;
-    FtcDcMotor TestRightMotor;
+//    FtcDcMotor TestLeftMotor;
+//    FtcDcMotor TestRightMotor;
 
     public Robot(TrcRobot.RunMode runMode)
     {
@@ -63,26 +65,44 @@ public class Robot implements FtcMenu.MenuButtons
         tracer = FtcOpMode.getGlobalTracer();
         dashboard.setTextView(
                 (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
-        battery = new FtcRobotBattery();
+//        battery = new FtcRobotBattery();
 
+        if (USE_VUFORIA)
+        {
+            dashboard.displayPrintf(1,"Initializing Vuforia");
+            int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
+            dashboard.displayPrintf(3,"CamId %s",cameraViewId);
+            vuforiaVision = new VuforiaVision(this, -1);//cameraViewId);
+            dashboard.displayPrintf(1,"Initialized Vuforia");
+        }
+
+        dashboard.displayPrintf(2,"Loading up Peripherals.");
         //Peripherals
-        TestLeftMotor = new FtcDcMotor("TestLeftMotor");
-        TestRightMotor = new FtcDcMotor("TestRightMotor");
-
-        TestLeftMotor.setInverted(true);
-        TestRightMotor.setInverted(false);
-
-        TestLeftMotor.setBrakeModeEnabled(false);
-        TestRightMotor.setBrakeModeEnabled(false);
+//        TestLeftMotor = new FtcDcMotor("TestLeftMotor");
+//        TestRightMotor = new FtcDcMotor("TestRightMotor");
+//
+//        TestLeftMotor.setInverted(true);
+//        TestRightMotor.setInverted(false);
+//
+//        TestLeftMotor.setBrakeModeEnabled(false);
+//        TestRightMotor.setBrakeModeEnabled(false);
     }   //Robot
 
     void startMode(TrcRobot.RunMode runMode)
     {
-
+        if (vuforiaVision != null)
+        {
+            vuforiaVision.setEnabled(true);
+        }
     }   //startMode
 
     void stopMode(TrcRobot.RunMode runMode){
 
+        if (vuforiaVision != null)
+        {
+            vuforiaVision.setEnabled(false);
+        }
     }   //stopMode
 
     //

@@ -75,5 +75,4 @@ class RobotInfo
     public static final int PIXY_TEAM_MARKER2_SIGNATURE         = 4;
     public static final int PIXY_BRIGHTNESS                     = 80;
     public static final double PIXY_CAM_OFFSET                  = 8.0;
-    public static final PixyVision.Orientation PIXY_ORIENTATION = PixyVision.Orientation.NORMAL_LANDSCAPE;
 }   //class RobotInfo
