@@ -25,6 +25,8 @@ package team5611;
 import android.widget.TextView;
 
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
 import ftclib.FtcDcMotor;
 import ftclib.FtcMenu;
@@ -73,7 +75,7 @@ public class Robot implements FtcMenu.MenuButtons
             int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
             tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
             dashboard.displayPrintf(3,"CamId %s",cameraViewId);
-            vuforiaVision = new VuforiaVision(this, -1);//cameraViewId);
+            vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
             dashboard.displayPrintf(1,"Initialized Vuforia");
         }
 

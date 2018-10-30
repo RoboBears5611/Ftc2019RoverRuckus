@@ -23,36 +23,39 @@
 package team5611;
 
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
-import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+        import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+        import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+        import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+        import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 
-import ftclib.FtcVuforia;
-import trclib.TrcUtil;
+        import ftclib.FtcVuforia;
+        import trclib.TrcUtil;
 
-import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
+        import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
+        import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
+        import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 
 public class VuforiaVision
 {
-    private static final int IMAGE_WIDTH = 640;
-    private static final int IMAGE_HEIGHT = 480;
+    private static final int IMAGE_WIDTH = 640;     //in pixels
+    private static final int IMAGE_HEIGHT = 480;    //in pixels
     private static final int FRAME_QUEUE_CAPACITY = 2;
-    // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
-    // We will define some constants and conversions here
-    private static final float FTC_FIELD_WIDTH_MM  = (12*6) * (float)TrcUtil.MM_PER_INCH;// the width of the FTC field (from the center point to the outer panels)
-    private static final float TARGET_HEIGHT_MM = (6) * (float)TrcUtil.MM_PER_INCH;      // the height of the center of the target image above the floor
+    //
+    // Since ImageTarget trackables use mm to specify their dimensions, we must use mm for all the physical dimension.
+    // We will define some constants and conversions here.
+    //
+    // Width of the FTC field (from the center point to the outer panels)
+    private static final float FTC_FIELD_WIDTH_MM  = (12*6) * (float)TrcUtil.MM_PER_INCH;   //6 ft. in mm
+    // Height of the center of the target image above the floor.
+    private static final float TARGET_HEIGHT_MM = (6) * (float)TrcUtil.MM_PER_INCH;         //6 inches in mm
 
     private Robot robot;
     private FtcVuforia vuforia;
+    private VuforiaTrackable[] imageTargets = null;
     private OpenGLMatrix lastRobotLocation = null;
 
-
-    public VuforiaVision(Robot robot, int cameraViewId)
+    public VuforiaVision(
+            Robot robot, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir, OpenGLMatrix phoneLocation)
     {
         final String VUFORIA_LICENSE_KEY =
                 "AaXobyf/////AAABmf2229UqeE0Glf90ORMEc7+MsrR1FfF0gydPcpd" +
@@ -63,43 +66,11 @@ public class VuforiaVision
                         "kGG4lhM0vt/KPv7GEWYUChSJYHgXZ5+GkuQuWLTYVgkEKfriT+" +
                         "6S7Lx4XoHpyOgNSnxgg+F6UBWHzkTlQLDC40zfRwdGmWh8Z8ao" +
                         "y+AGK0ZKLQQZu4/40ytpXpTNQ2";
-        final VuforiaLocalizer.CameraDirection CAMERA_DIR = VuforiaLocalizer.CameraDirection.BACK;
-        final String TRACKABLES_FILE = "RoverRuckus";
+        final String TRACKABLE_IMAGES_FILE = "RoverRuckus";
 
         this.robot = robot;
-        vuforia = new FtcVuforia(VUFORIA_LICENSE_KEY, cameraViewId, CAMERA_DIR, 4, TRACKABLES_FILE);
+        vuforia = new FtcVuforia(VUFORIA_LICENSE_KEY, cameraViewId, cameraDir);
         vuforia.configVideoSource(IMAGE_WIDTH, IMAGE_HEIGHT, FRAME_QUEUE_CAPACITY);
-
-        /*
-         * Create a transformation matrix describing where the phone is on the robot.
-         *
-         * The coordinate frame for the robot looks the same as the field.
-         * The robot's "forward" direction is facing out along X axis, with the LEFT side facing out along the Y axis.
-         * Z is UP on the robot.  This equates to a bearing angle of Zero degrees.
-         *
-         * The phone starts out lying flat, with the screen facing Up and with the physical top of the phone
-         * pointing to the LEFT side of the Robot.  It's very important when you test this code that the top of the
-         * camera is pointing to the left side of the  robot.  The rotation angles don't work if you flip the phone.
-         *
-         * If using the rear (High Res) camera:
-         * We need to rotate the camera around it's long axis to bring the rear camera forward.
-         * This requires a negative 90 degree rotation on the Y axis
-         *
-         * If using the Front (Low Res) camera
-         * We need to rotate the camera around it's long axis to bring the FRONT camera forward.
-         * This requires a Positive 90 degree rotation on the Y axis
-         *
-         * Next, translate the camera lens to where it is on the robot.
-         * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
-         */
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
-
-        OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
-                .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
-                        CAMERA_DIR == FRONT ? 90 : -90, 0, 0));
 
         /*
          * In order for localization to work, we need to tell the system where each target is on the field, and
@@ -129,7 +100,6 @@ public class VuforiaVision
         OpenGLMatrix blueRoverLocationOnField = OpenGLMatrix
                 .translation(0, FTC_FIELD_WIDTH_MM, TARGET_HEIGHT_MM)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0));
-        vuforia.setTargetInfo(0, "Blue-Rover", blueRoverLocationOnField, phoneLocationOnRobot);
 
         /*
          * To place the RedFootprint target in the middle of the red perimeter wall:
@@ -141,7 +111,6 @@ public class VuforiaVision
         OpenGLMatrix redFootprintLocationOnField = OpenGLMatrix
                 .translation(0, -FTC_FIELD_WIDTH_MM, TARGET_HEIGHT_MM)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180));
-        vuforia.setTargetInfo(1, "Red-Footprint", redFootprintLocationOnField, phoneLocationOnRobot);
 
         /*
          * To place the FrontCraters target in the middle of the front perimeter wall:
@@ -153,7 +122,6 @@ public class VuforiaVision
         OpenGLMatrix frontCratersLocationOnField = OpenGLMatrix
                 .translation(-FTC_FIELD_WIDTH_MM, 0, TARGET_HEIGHT_MM)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0 , 90));
-        vuforia.setTargetInfo(2, "Front-Craters", frontCratersLocationOnField, phoneLocationOnRobot);
 
         /*
          * To place the BackSpace target in the middle of the back perimeter wall:
@@ -165,7 +133,28 @@ public class VuforiaVision
         OpenGLMatrix backSpaceLocationOnField = OpenGLMatrix
                 .translation(FTC_FIELD_WIDTH_MM, 0, TARGET_HEIGHT_MM)
                 .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
-        vuforia.setTargetInfo(3, "Back-Space", backSpaceLocationOnField, phoneLocationOnRobot);
+
+        FtcVuforia.TargetInfo[] imageTargetsInfo =
+                {
+                        new FtcVuforia.TargetInfo(0, "Blue-Rover", false, blueRoverLocationOnField),
+                        new FtcVuforia.TargetInfo(1, "Red-Footprint", false, blueRoverLocationOnField),
+                        new FtcVuforia.TargetInfo(2, "Front-Craters", false, frontCratersLocationOnField),
+                        new FtcVuforia.TargetInfo(3, "Back-Space", false, backSpaceLocationOnField)
+                };
+
+        vuforia.addTargetList(TRACKABLE_IMAGES_FILE, imageTargetsInfo, phoneLocation);
+        imageTargets = new VuforiaTrackable[imageTargetsInfo.length];
+        for (int i = 0; i < imageTargets.length; i++)
+        {
+            imageTargets[i] = vuforia.getTarget(imageTargetsInfo[i].name);
+        }
+
+//        FtcVuforia.TargetInfo[] objectTargetsInfo =
+//        {
+//                new FtcVuforia.TargetInfo(0, "Team-Marker", true, null)
+//        };
+//
+//        vuforia.addTargetList(TRACKABLE_OBJECTS_FILE, objectTargetsInfo, null);
     }   //VuforiaVision
 
     public void setEnabled(boolean enabled)
@@ -178,15 +167,14 @@ public class VuforiaVision
         OpenGLMatrix robotLocation = null;
         boolean targetVisible = false;
 
-        for (int i = 0; i < vuforia.getNumTargets(); i++)
+        for (int i = 0; i < imageTargets.length; i++)
         {
-            VuforiaTrackable target = vuforia.getTarget(i);
-            if (vuforia.isTargetVisible(target))
+            if (vuforia.isTargetVisible(imageTargets[i]))
             {
                 targetVisible = true;
                 // getUpdatedRobotLocation() will return null if no new information is available since
                 // the last time that call was made, or if the trackable is not currently visible.
-                OpenGLMatrix location = vuforia.getRobotLocation(target);
+                OpenGLMatrix location = vuforia.getRobotLocation(imageTargets[i]);
                 if (location != null)
                 {
                     lastRobotLocation = location;
@@ -203,9 +191,9 @@ public class VuforiaVision
         return robotLocation;
     }   //getRobotLocation
 
-    public VectorF getRobotTranslation(OpenGLMatrix location)
+    public VectorF getLocationTranslation(OpenGLMatrix location)
     {
-        final String funcName = "getRobotTranslation";
+        final String funcName = "getLocationTranslation";
 
         VectorF translation = location.getTranslation();
         // express position (translation) of robot in inches.
@@ -214,17 +202,17 @@ public class VuforiaVision
                 translation.get(1)/TrcUtil.MM_PER_INCH,
                 translation.get(2)/TrcUtil.MM_PER_INCH);
         return translation;
-    }   //getRobotTranslation
+    }   //getLocationTranslation
 
-    public Orientation getRobotOrientation(OpenGLMatrix location)
+    public Orientation getLocationOrientation(OpenGLMatrix location)
     {
-        final String funcName = "getRobotOrientation";
+        final String funcName = "getLocationOrientation";
 
         Orientation orientation = Orientation.getOrientation(location, EXTRINSIC, XYZ, DEGREES);
         // express the rotation of the robot in degrees.
         robot.tracer.traceInfo(funcName, "Orientation: roll=%6.2f, pitch=%6.2f, heading=%6.2f",
                 orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         return orientation;
-    }   //getRobotOrientation
+    }   //getLocationOrientation
 
 }   //class VuforiaVision
