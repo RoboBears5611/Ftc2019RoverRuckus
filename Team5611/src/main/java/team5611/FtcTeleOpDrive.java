@@ -31,17 +31,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import ftclib.FtcGamepad;
 import ftclib.FtcOpMode;
 import hallib.HalDashboard;
-import trclib.TrcDbgTrace;
-import trclib.TrcGameController;
 import trclib.TrcRobot;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 
-@TeleOp(name="Vuforia Test", group="TeleOp")
-public class FtcTeleOp extends FtcOpMode
+@TeleOp(name="Basic Drive", group="TeleOp")
+public class FtcTeleOpDrive extends FtcOpMode
 {
     protected HalDashboard dashboard;
-    protected team5611.Robot robot;
+    protected Robot5611 robot;
 
     protected FtcGamepad driverGamepad;
     protected FtcGamepad operatorGamepad;
@@ -61,10 +59,10 @@ public class FtcTeleOp extends FtcOpMode
         // Initializing robot objects.
         //
 
-        robot = new Robot(TrcRobot.RunMode.TELEOP_MODE);
+        robot = new Robot5611(TrcRobot.RunMode.TELEOP_MODE);
 
         dashboard = robot.dashboard;
-        dashboard.displayPrintf(2,"Robot Object Created!");
+        dashboard.displayPrintf(2,"Robot5611 Object Created!");
         //
         // Initializing Gamepads.
         //
@@ -100,5 +98,6 @@ public class FtcTeleOp extends FtcOpMode
             Orientation orientation = robot.vuforiaVision.getLocationOrientation(location).toAxesOrder(XYZ);
             robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         }   //runPeriodic
+        robot.drive(controls.strafe(),controls.forward(),controls.turn());
     }
-}   //class FtcTeleOp
+}   //class FtcTeleOpDrive

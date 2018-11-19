@@ -13,7 +13,18 @@ public class DefaultControls extends Controls {
     }
 
     @Override
-    double getTestMotorPower() {
+    double forward() {
         return driverGamepad.getLeftStickY();
     }
+
+    @Override
+    double strafe() {
+        return driverGamepad.getLeftStickX();
+    }
+
+    @Override
+    double turn() {
+        return driverGamepad.getRightStickX();
+    }
+
 }

@@ -28,20 +28,24 @@ import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
+import ftclib.FtcAndroidTone;
 import ftclib.FtcDcMotor;
 import ftclib.FtcMenu;
 import ftclib.FtcOpMode;
 import ftclib.FtcRobotBattery;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
+import trclib.TrcMecanumDriveBase;
+import trclib.TrcPidController;
+import trclib.TrcPidDrive;
 import trclib.TrcRobot;
 
-public class Robot implements FtcMenu.MenuButtons
+public class Robot5611 implements FtcMenu.MenuButtons
 {
     static final boolean USE_SPEECH = true;
     static final boolean USE_VUFORIA = true;
 
-    private static final String moduleName = "Robot";
+    private static final String moduleName = "Robot5611";
     //
     // Global objects.
     //
@@ -50,13 +54,26 @@ public class Robot implements FtcMenu.MenuButtons
     TrcDbgTrace tracer;
     FtcRobotBattery battery = null;
     VuforiaVision vuforiaVision = null;
+    FtcAndroidTone androidTone;
+
+
+    FtcDcMotor leftFrontWheel = null;
+    FtcDcMotor rightFrontWheel = null;
+    FtcDcMotor leftRearWheel = null;
+    FtcDcMotor rightRearWheel = null;
+    TrcMecanumDriveBase driveBase = null;
+
+    TrcPidController encoderXPidCtrl = null;
+    TrcPidController encoderYPidCtrl = null;
+    TrcPidController gyroPidCtrl = null;
+    TrcPidDrive pidDrive = null;
 
 
     //Peripherals
 //    FtcDcMotor TestLeftMotor;
 //    FtcDcMotor TestRightMotor;
 
-    public Robot(TrcRobot.RunMode runMode)
+    public Robot5611(TrcRobot.RunMode runMode)
     {
         //
         // Initialize global objects.
@@ -68,6 +85,7 @@ public class Robot implements FtcMenu.MenuButtons
         dashboard.setTextView(
                 (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
 //        battery = new FtcRobotBattery();
+        androidTone = new FtcAndroidTone("AndroidTone");
 
         if (USE_VUFORIA)
         {
@@ -80,16 +98,54 @@ public class Robot implements FtcMenu.MenuButtons
         }
 
         dashboard.displayPrintf(2,"Loading up Peripherals.");
-        //Peripherals
-//        TestLeftMotor = new FtcDcMotor("TestLeftMotor");
-//        TestRightMotor = new FtcDcMotor("TestRightMotor");
-//
-//        TestLeftMotor.setInverted(true);
-//        TestRightMotor.setInverted(false);
-//
-//        TestLeftMotor.setBrakeModeEnabled(false);
-//        TestRightMotor.setBrakeModeEnabled(false);
-    }   //Robot
+
+        leftFrontWheel = new FtcDcMotor(RobotInfo.LeftFrontMotorName);
+        rightFrontWheel = new FtcDcMotor(RobotInfo.RightFrontMotorName);
+        leftRearWheel = new FtcDcMotor(RobotInfo.LeftBackMotorName);
+        rightRearWheel = new FtcDcMotor(RobotInfo.RightBackMotorName);
+
+        leftFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        rightFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        leftRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        rightRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+
+        leftFrontWheel.setInverted(false);
+        leftRearWheel.setInverted(false);
+        rightFrontWheel.setInverted(true);
+        rightRearWheel.setInverted(true);
+
+        leftFrontWheel.setBrakeModeEnabled(true);
+        leftRearWheel.setBrakeModeEnabled(true);
+        rightFrontWheel.setBrakeModeEnabled(true);
+        rightRearWheel.setBrakeModeEnabled(true);
+
+        driveBase = new TrcMecanumDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel);
+        driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT);
+        //
+        // Initialize PID drive.
+        //
+        encoderXPidCtrl = new TrcPidController(
+                "encoderXPidCtrl",
+                new TrcPidController.PidCoefficients(
+                        RobotInfo.ENCODER_X_KP, RobotInfo.ENCODER_X_KI, RobotInfo.ENCODER_X_KD),
+                RobotInfo.ENCODER_X_TOLERANCE, () -> driveBase.getXPosition());
+        encoderYPidCtrl = new TrcPidController(
+                "encoderYPidCtrl",
+                new TrcPidController.PidCoefficients(
+                        RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD),
+                RobotInfo.ENCODER_Y_TOLERANCE, () -> driveBase.getYPosition());
+        gyroPidCtrl = new TrcPidController(
+                "gyroPidCtrl",
+                new TrcPidController.PidCoefficients(
+                        RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD),
+                RobotInfo.GYRO_TOLERANCE, () -> driveBase.getHeading());
+        gyroPidCtrl.setAbsoluteSetPoint(true);
+        gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
+
+        pidDrive = new TrcPidDrive("pidDrive", driveBase, encoderXPidCtrl, encoderYPidCtrl, gyroPidCtrl);
+        pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
+        pidDrive.setBeep(androidTone);
+    }   //Robot5611
 
     void startMode(TrcRobot.RunMode runMode)
     {
@@ -106,6 +162,10 @@ public class Robot implements FtcMenu.MenuButtons
             vuforiaVision.setEnabled(false);
         }
     }   //stopMode
+
+    void drive(double x, double y, double turn){
+        driveBase.holonomicDrive(-x,y,-turn);
+    }
 
     //
     // Implements FtcMenu.MenuButtons interface.
@@ -135,4 +195,4 @@ public class Robot implements FtcMenu.MenuButtons
         return opMode.gamepad1.dpad_left;
     }   //isMenuBackButton
 
-}   //class Robot
+}   //class Robot5611

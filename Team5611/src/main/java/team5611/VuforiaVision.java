@@ -49,13 +49,13 @@ public class VuforiaVision
     // Height of the center of the target image above the floor.
     private static final float TARGET_HEIGHT_MM = (6) * (float)TrcUtil.MM_PER_INCH;         //6 inches in mm
 
-    private Robot robot;
+    private Robot5611 robot5611;
     private FtcVuforia vuforia;
     private VuforiaTrackable[] imageTargets = null;
     private OpenGLMatrix lastRobotLocation = null;
 
     public VuforiaVision(
-            Robot robot, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir, OpenGLMatrix phoneLocation)
+            Robot5611 robot5611, int cameraViewId, VuforiaLocalizer.CameraDirection cameraDir, OpenGLMatrix phoneLocation)
     {
         final String VUFORIA_LICENSE_KEY =
                 "AaXobyf/////AAABmf2229UqeE0Glf90ORMEc7+MsrR1FfF0gydPcpd" +
@@ -68,7 +68,7 @@ public class VuforiaVision
                         "y+AGK0ZKLQQZu4/40ytpXpTNQ2";
         final String TRACKABLE_IMAGES_FILE = "RoverRuckus";
 
-        this.robot = robot;
+        this.robot5611 = robot5611;
         vuforia = new FtcVuforia(VUFORIA_LICENSE_KEY, cameraViewId, cameraDir);
         vuforia.configVideoSource(IMAGE_WIDTH, IMAGE_HEIGHT, FRAME_QUEUE_CAPACITY);
 
@@ -197,7 +197,7 @@ public class VuforiaVision
 
         VectorF translation = location.getTranslation();
         // express position (translation) of robot in inches.
-        robot.tracer.traceInfo(funcName, "Translation: x=%6.2f, y=%6.2f, z=%6.2f",
+        robot5611.tracer.traceInfo(funcName, "Translation: x=%6.2f, y=%6.2f, z=%6.2f",
                 translation.get(0)/TrcUtil.MM_PER_INCH,
                 translation.get(1)/TrcUtil.MM_PER_INCH,
                 translation.get(2)/TrcUtil.MM_PER_INCH);
@@ -210,7 +210,7 @@ public class VuforiaVision
 
         Orientation orientation = Orientation.getOrientation(location, EXTRINSIC, XYZ, DEGREES);
         // express the rotation of the robot in degrees.
-        robot.tracer.traceInfo(funcName, "Orientation: roll=%6.2f, pitch=%6.2f, heading=%6.2f",
+        robot5611.tracer.traceInfo(funcName, "Orientation: roll=%6.2f, pitch=%6.2f, heading=%6.2f",
                 orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         return orientation;
     }   //getLocationOrientation

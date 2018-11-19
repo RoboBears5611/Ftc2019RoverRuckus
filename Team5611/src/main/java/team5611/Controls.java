@@ -16,5 +16,7 @@ public abstract class Controls {
         this.driverGamepad = driverGamepad;
         this.operatorGamepad = operatorGamepad;
     }
-    abstract double getTestMotorPower();
+    abstract double forward();
+    abstract double strafe();
+    abstract double turn();
 }

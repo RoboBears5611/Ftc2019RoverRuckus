@@ -199,7 +199,7 @@ public class Robot implements FtcMenu.MenuButtons
         // Reset all X, Y and heading values.
         //
         driveBase.resetOdometry();
-        targetHeading = 0.0;
+        targetHeading = 0.0
     }   //startMode
 
     void stopMode(TrcRobot.RunMode runMode)

@@ -51,28 +51,33 @@ class RobotInfo
 
     static final double PIDDRIVE_STALL_TIMEOUT          = 0.25;     //in msec.
 
-    //
-    // Elevator subsystem
-    //
-    public static final double ELEVATOR_INCHES_PER_COUNT = 5.625/8498;
-    public static final double ELEVATOR_ZERO_OFFSET = 15.8;
-    public static final double ELEVATOR_KP = 3.0;
-    public static final double ELEVATOR_KI = 0.0;
-    public static final double ELEVATOR_KD = 0.0;
-    public static final double ELEVATOR_TOLERANCE = 0.2;
-    public static final double ELEVATOR_MIN_HEIGHT = ELEVATOR_ZERO_OFFSET - 0.1;
-    public static final double ELEVATOR_MAX_HEIGHT = 24.0;
-    public static final double ELEVATOR_CAL_POWER = 0.3;
-    //
-    // PixyVision subsystem.
-    //
+    static final String RightFrontMotorName = "RFMotor";
+    static final String LeftFrontMotorName = "LFMotor";
+    static final String RightBackMotorName = "RBMotor";
+    static final String LeftBackMotorName = "LBMotor";
 
-    public static final int PIXYCAM_WIDTH                       = 320;
-    public static final int PIXYCAM_HEIGHT                      = 200;
-    public static final int PIXY_GOLD_MINERAL_SIGNATURE         = 1;
-    public static final int PIXY_SILVER_MINERAL_SIGNATURE       = 2;
-    public static final int PIXY_TEAM_MARKER1_SIGNATURE         = 3;
-    public static final int PIXY_TEAM_MARKER2_SIGNATURE         = 4;
-    public static final int PIXY_BRIGHTNESS                     = 80;
-    public static final double PIXY_CAM_OFFSET                  = 8.0;
+//    //
+//    // Elevator subsystem
+//    //
+//    public static final double ELEVATOR_INCHES_PER_COUNT = 5.625/8498;
+//    public static final double ELEVATOR_ZERO_OFFSET = 15.8;
+//    public static final double ELEVATOR_KP = 3.0;
+//    public static final double ELEVATOR_KI = 0.0;
+//    public static final double ELEVATOR_KD = 0.0;
+//    public static final double ELEVATOR_TOLERANCE = 0.2;
+//    public static final double ELEVATOR_MIN_HEIGHT = ELEVATOR_ZERO_OFFSET - 0.1;
+//    public static final double ELEVATOR_MAX_HEIGHT = 24.0;
+//    public static final double ELEVATOR_CAL_POWER = 0.3;
+//    //
+//    // PixyVision subsystem.
+//    //
+//
+//    public static final int PIXYCAM_WIDTH                       = 320;
+//    public static final int PIXYCAM_HEIGHT                      = 200;
+//    public static final int PIXY_GOLD_MINERAL_SIGNATURE         = 1;
+//    public static final int PIXY_SILVER_MINERAL_SIGNATURE       = 2;
+//    public static final int PIXY_TEAM_MARKER1_SIGNATURE         = 3;
+//    public static final int PIXY_TEAM_MARKER2_SIGNATURE         = 4;
+//    public static final int PIXY_BRIGHTNESS                     = 80;
+//    public static final double PIXY_CAM_OFFSET                  = 8.0;
 }   //class RobotInfo
