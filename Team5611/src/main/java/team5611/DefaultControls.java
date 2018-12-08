@@ -17,10 +17,6 @@ public class DefaultControls extends Controls {
         return driverGamepad.getLeftStickY();
     }
 
-    @Override
-    double strafe() {
-        return driverGamepad.getLeftStickX();
-    }
 
     @Override
     double turn() {

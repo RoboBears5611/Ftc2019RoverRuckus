@@ -17,6 +17,5 @@ public abstract class Controls {
         this.operatorGamepad = operatorGamepad;
     }
     abstract double forward();
-    abstract double strafe();
     abstract double turn();
 }

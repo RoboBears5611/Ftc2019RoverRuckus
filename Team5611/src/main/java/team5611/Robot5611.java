@@ -29,16 +29,20 @@ import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
 import ftclib.FtcAndroidTone;
+import ftclib.FtcBNO055Imu;
 import ftclib.FtcDcMotor;
 import ftclib.FtcMenu;
 import ftclib.FtcOpMode;
 import ftclib.FtcRobotBattery;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
+import trclib.TrcGyro;
 import trclib.TrcMecanumDriveBase;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
 import trclib.TrcRobot;
+import trclib.TrcSimpleDriveBase;
+import trclib.TrcWarpSpace;
 
 public class Robot5611 implements FtcMenu.MenuButtons
 {
@@ -61,9 +65,8 @@ public class Robot5611 implements FtcMenu.MenuButtons
     FtcDcMotor rightFrontWheel = null;
     FtcDcMotor leftRearWheel = null;
     FtcDcMotor rightRearWheel = null;
-    TrcMecanumDriveBase driveBase = null;
+    TrcSimpleDriveBase driveBase = null;
 
-    TrcPidController encoderXPidCtrl = null;
     TrcPidController encoderYPidCtrl = null;
     TrcPidController gyroPidCtrl = null;
     TrcPidDrive pidDrive = null;
@@ -119,16 +122,11 @@ public class Robot5611 implements FtcMenu.MenuButtons
         rightFrontWheel.setBrakeModeEnabled(true);
         rightRearWheel.setBrakeModeEnabled(true);
 
-        driveBase = new TrcMecanumDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel);
+        driveBase = new TrcSimpleDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel);
         driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT);
         //
         // Initialize PID drive.
         //
-        encoderXPidCtrl = new TrcPidController(
-                "encoderXPidCtrl",
-                new TrcPidController.PidCoefficients(
-                        RobotInfo.ENCODER_X_KP, RobotInfo.ENCODER_X_KI, RobotInfo.ENCODER_X_KD),
-                RobotInfo.ENCODER_X_TOLERANCE, () -> driveBase.getXPosition());
         encoderYPidCtrl = new TrcPidController(
                 "encoderYPidCtrl",
                 new TrcPidController.PidCoefficients(
@@ -142,7 +140,8 @@ public class Robot5611 implements FtcMenu.MenuButtons
         gyroPidCtrl.setAbsoluteSetPoint(true);
         gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
 
-        pidDrive = new TrcPidDrive("pidDrive", driveBase, encoderXPidCtrl, encoderYPidCtrl, gyroPidCtrl);
+
+        pidDrive = new TrcPidDrive("pidDrive", driveBase,null, encoderYPidCtrl, gyroPidCtrl);
         pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
         pidDrive.setBeep(androidTone);
     }   //Robot5611
@@ -163,9 +162,20 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }
     }   //stopMode
 
-    void drive(double x, double y, double turn){
-        driveBase.holonomicDrive(-x,y,-turn);
+    void drive(double y, double turn){
+        driveBase.arcadeDrive(y,-turn);
     }
+
+    void traceStateInfo(double elapsedTime, String stateName, double xDistance, double yDistance, double heading)
+    {
+        tracer.traceInfo(
+                moduleName,
+                "[%5.3f] >>>>> %s: xPos=%6.2f/%6.2f,yPos=%6.2f/%6.2f,heading=%6.1f/%6.1f,volt=%5.2fV(%5.2fV)",
+                elapsedTime, stateName,
+                driveBase.getXPosition(), xDistance, driveBase.getYPosition(), yDistance,
+                driveBase.getHeading(), heading,
+                battery.getVoltage(), battery.getLowestVoltage());
+    }   //traceStateInfo
 
     //
     // Implements FtcMenu.MenuButtons interface.

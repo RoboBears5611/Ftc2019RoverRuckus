@@ -98,6 +98,6 @@ public class FtcTeleOpDrive extends FtcOpMode
             Orientation orientation = robot.vuforiaVision.getLocationOrientation(location).toAxesOrder(XYZ);
             robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         }   //runPeriodic
-        robot.drive(controls.strafe(),controls.forward(),controls.turn());
+        robot.drive(controls.forward(),controls.turn());
     }
 }   //class FtcTeleOpDrive
