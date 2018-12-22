@@ -35,7 +35,7 @@ import trclib.TrcRobot;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 
-@TeleOp(name="Basic Drive", group="TeleOp")
+@TeleOp(name="Robot Full", group="TeleOp")
 public class FtcTeleOpDrive extends FtcOpMode
 {
     protected HalDashboard dashboard;
@@ -98,6 +98,19 @@ public class FtcTeleOpDrive extends FtcOpMode
             Orientation orientation = robot.vuforiaVision.getLocationOrientation(location).toAxesOrder(XYZ);
             robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         }   //runPeriodic
-        robot.drive(controls.forward(),controls.turn());
+        Controls.DriveArguments arguments = controls.getDrive();
+        drivePowerScale = controls.turboMode()?1:0.5;
+        switch(arguments.driveType){
+            case Tank:
+                robot.tankDrive(arguments.leftOrY * drivePowerScale, arguments.rightOrTurn * drivePowerScale);
+                break;
+            case Arcade:
+                robot.arcadeDrive(arguments.leftOrY * drivePowerScale, arguments.rightOrTurn * drivePowerScale);
+                break;
+            default:
+                throw new UnsupportedOperationException("Drive Type "+arguments.driveType.toString()+" not supported");
+        }
+        robot.extendoArm(controls.armExtend(), controls.armRotate());
+        robot.collector(controls.collector());
     }
 }   //class FtcTeleOpDrive

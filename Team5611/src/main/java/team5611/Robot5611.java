@@ -24,6 +24,9 @@ package team5611;
 
 import android.widget.TextView;
 
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
@@ -34,6 +37,7 @@ import ftclib.FtcDcMotor;
 import ftclib.FtcMenu;
 import ftclib.FtcOpMode;
 import ftclib.FtcRobotBattery;
+import ftclib.FtcServo;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
 import trclib.TrcGyro;
@@ -61,10 +65,8 @@ public class Robot5611 implements FtcMenu.MenuButtons
     FtcAndroidTone androidTone;
 
 
-    FtcDcMotor leftFrontWheel = null;
-    FtcDcMotor rightFrontWheel = null;
-    FtcDcMotor leftRearWheel = null;
-    FtcDcMotor rightRearWheel = null;
+    FtcDcMotor leftWheel = null;
+    FtcDcMotor rightWheel = null;
     TrcSimpleDriveBase driveBase = null;
 
     TrcPidController encoderYPidCtrl = null;
@@ -72,9 +74,13 @@ public class Robot5611 implements FtcMenu.MenuButtons
     TrcPidDrive pidDrive = null;
 
 
-    //Peripherals
-//    FtcDcMotor TestLeftMotor;
-//    FtcDcMotor TestRightMotor;
+    //Peripherals (extendoArm)
+    FtcDcMotor ExtendoRotator;
+    FtcDcMotor Extendor;
+
+    FtcDcMotor RoboLift;
+    CRServo LCollectorServo;
+    CRServo RCollectorServo;
 
     public Robot5611(TrcRobot.RunMode runMode)
     {
@@ -87,7 +93,11 @@ public class Robot5611 implements FtcMenu.MenuButtons
         tracer = FtcOpMode.getGlobalTracer();
         dashboard.setTextView(
                 (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
-//        battery = new FtcRobotBattery();
+        if(opMode.hardwareMap.voltageSensor.entrySet().isEmpty()){
+            dashboard.displayPrintf(0,"No Battery Sensor Found");
+        }else{
+            battery = new FtcRobotBattery();
+        }
         androidTone = new FtcAndroidTone("AndroidTone");
 
         if (USE_VUFORIA)
@@ -102,27 +112,19 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
         dashboard.displayPrintf(2,"Loading up Peripherals.");
 
-        leftFrontWheel = new FtcDcMotor(RobotInfo.LeftFrontMotorName);
-        rightFrontWheel = new FtcDcMotor(RobotInfo.RightFrontMotorName);
-        leftRearWheel = new FtcDcMotor(RobotInfo.LeftBackMotorName);
-        rightRearWheel = new FtcDcMotor(RobotInfo.RightBackMotorName);
+        leftWheel = new FtcDcMotor(RobotInfo.LeftMotorName);
+        rightWheel = new FtcDcMotor(RobotInfo.RightMotorName);
 
-        leftFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        rightFrontWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        leftRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        rightRearWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+        rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
 
-        leftFrontWheel.setInverted(false);
-        leftRearWheel.setInverted(false);
-        rightFrontWheel.setInverted(true);
-        rightRearWheel.setInverted(true);
+        leftWheel.setInverted(false);
+        rightWheel.setInverted(true);
 
-        leftFrontWheel.setBrakeModeEnabled(true);
-        leftRearWheel.setBrakeModeEnabled(true);
-        rightFrontWheel.setBrakeModeEnabled(true);
-        rightRearWheel.setBrakeModeEnabled(true);
+        leftWheel.setBrakeModeEnabled(true);
+        rightWheel.setBrakeModeEnabled(true);
 
-        driveBase = new TrcSimpleDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel);
+        driveBase = new TrcSimpleDriveBase(leftWheel, rightWheel);
         driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT);
         //
         // Initialize PID drive.
@@ -144,6 +146,16 @@ public class Robot5611 implements FtcMenu.MenuButtons
         pidDrive = new TrcPidDrive("pidDrive", driveBase,null, encoderYPidCtrl, gyroPidCtrl);
         pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
         pidDrive.setBeep(androidTone);
+
+        ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
+        Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
+
+        RoboLift = new FtcDcMotor(RobotInfo.RoboLiftMotorName);
+
+        LCollectorServo = opMode.hardwareMap.crservo.get(RobotInfo.LeftCollectorServoName);
+        RCollectorServo = opMode.hardwareMap.crservo.get(RobotInfo.RightCollectorServoName);
+        RCollectorServo.setDirection(DcMotorSimple.Direction.REVERSE);
+
     }   //Robot5611
 
     void startMode(TrcRobot.RunMode runMode)
@@ -152,6 +164,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         {
             vuforiaVision.setEnabled(true);
         }
+
     }   //startMode
 
     void stopMode(TrcRobot.RunMode runMode){
@@ -162,8 +175,19 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }
     }   //stopMode
 
-    void drive(double y, double turn){
-        driveBase.arcadeDrive(y,-turn);
+    void tankDrive(double left, double right){
+        driveBase.tankDrive(left, right);
+    }
+    void arcadeDrive(double y, double turn) {
+        driveBase.arcadeDrive(y,turn);
+    }
+    void extendoArm(double extend, double rotate){
+        Extendor.set(extend);
+        ExtendoRotator.set(rotate);
+    }
+    public void collector(double collector) {
+        RCollectorServo.setPower(collector);
+        LCollectorServo.setPower(collector);
     }
 
     void traceStateInfo(double elapsedTime, String stateName, double xDistance, double yDistance, double heading)
@@ -174,7 +198,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
                 elapsedTime, stateName,
                 driveBase.getXPosition(), xDistance, driveBase.getYPosition(), yDistance,
                 driveBase.getHeading(), heading,
-                battery.getVoltage(), battery.getLowestVoltage());
+                battery==null ? 0 : battery.getVoltage(), battery==null ? 0 : battery.getLowestVoltage());
     }   //traceStateInfo
 
     //
@@ -204,5 +228,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
     {
         return opMode.gamepad1.dpad_left;
     }   //isMenuBackButton
+
 
 }   //class Robot5611

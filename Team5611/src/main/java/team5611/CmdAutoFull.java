@@ -23,16 +23,27 @@
 package team5611;
 
 import trclib.TrcEvent;
+import trclib.TrcPidMotor;
 import trclib.TrcRobot;
 import trclib.TrcStateMachine;
 import trclib.TrcTimer;
 
-class CmdTurn implements TrcRobot.RobotCommand
+class CmdAutoFull implements TrcRobot.RobotCommand
 {
     private enum State
     {
         DO_DELAY,
-        TURN_FOR_DEGREES,
+        LOWER_FROM_LANDER,
+        DETACH_FROM_LANDER,
+        TURN_TOWARDS_VUFORIA,
+        READ_VUFORIA_TARGET_FOR_SAMPLES,
+        DRIVE_TO_SAMPLE_FIELD,
+        FIND_GOLD_SAMPLE,
+        SHOVE_GOLD_SAMPLE,
+        BACK_UP_FOR_FINDING_VUFORIA,
+        READ_VURFORIA_TARGET_FOR_FLAG,
+        DRIVE_TO_DROP_ZONE,
+        DEPOSIT_FLAG,
         DONE
     }   //enum State
 
@@ -40,16 +51,14 @@ class CmdTurn implements TrcRobot.RobotCommand
 
     private Robot5611 robot;
     private double delay;
-    private double turnDegrees;
     private TrcEvent event;
     private TrcTimer timer;
     private TrcStateMachine<State> sm;
 
-    CmdTurn(Robot5611 robot, double delay,  double turnDegrees)
+    CmdAutoFull(Robot5611 robot, double delay)
     {
         this.robot = robot;
         this.delay = delay;
-        this.turnDegrees = turnDegrees;
         event = new TrcEvent(moduleName);
         timer = new TrcTimer(moduleName);
         sm = new TrcStateMachine<>(moduleName);
@@ -82,19 +91,31 @@ class CmdTurn implements TrcRobot.RobotCommand
                     //
                     if (delay == 0.0)
                     {
-                        sm.setState(State.TURN_FOR_DEGREES);
+                        sm.setState(State.DONE);
                     }
                     else
                     {
                         timer.set(delay, event);
-                        sm.waitForSingleEvent(event, State.TURN_FOR_DEGREES);
+                        sm.waitForSingleEvent(event, State.LOWER_FROM_LANDER);
                     }
                     break;
-
-                case TURN_FOR_DEGREES:
-                    robot.pidDrive.setTarget(0,turnDegrees,false,event);
-                    sm.waitForSingleEvent(event, State.DONE);
-                     break;
+                case LOWER_FROM_LANDER:
+                    robot.RoboLift.motor.setTargetPosition(-200);
+                    if(robot.RoboLift.motor.isBusy()){
+                        sm.setState(State.DETACH_FROM_LANDER);
+                    }
+                    break;
+                case DETACH_FROM_LANDER:
+                    robot.arcadeDrive(0.2,0);
+                    timer.set(1,event);
+                    sm.waitForSingleEvent(event,State.DETACH_FROM_LANDER);
+                    break;
+                case TURN_TOWARDS_VUFORIA:
+                    robot.leftWheel.motor.setTargetPosition(200);
+                    if(!robot.leftWheel.motor.isBusy()){
+                        sm.setState(State.DONE);
+                    }
+                    break;
                 case DONE:
                 default:
                     //

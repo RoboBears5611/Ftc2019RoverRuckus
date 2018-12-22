@@ -51,10 +51,15 @@ class RobotInfo
 
     static final double PIDDRIVE_STALL_TIMEOUT          = 0.25;     //in msec.
 
-    static final String RightFrontMotorName = "RFMotor";
-    static final String LeftFrontMotorName = "LFMotor";
-    static final String RightBackMotorName = "RBMotor";
-    static final String LeftBackMotorName = "LBMotor";
+    static final String RightMotorName = "RMotor";
+    static final String LeftMotorName  = "LMotor";
+    static final String ExtendoRotatorMotorName = "ExtendoRotatorMotor";
+    static final String ExtendorMotorName = "ExtendorMotor";
+    static final String RoboLiftMotorName = "RoboLiftMotor";
+    static final String LeftCollectorServoName  = "LCollectorServo";
+    static final String RightCollectorServoName = "RCollectorServo";
+//    static final String RightBackMotorName = "RBMotor";
+//    static final String LeftBackMotorName = "LBMotor";
 
 //    //
 //    // Elevator subsystem

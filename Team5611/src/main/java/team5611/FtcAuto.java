@@ -115,7 +115,7 @@ public class FtcAuto extends FtcOpMode
 //                break;
             case TURN:
                 autoCommand = new CmdTurn(robot,1,turnDegrees);
-
+                break;
             case DO_NOTHING:
             default:
                 autoCommand = null;
@@ -163,11 +163,11 @@ public class FtcAuto extends FtcOpMode
         //
         // Create menus.
         //
-        FtcChoiceMenu<MatchType> matchTypeMenu = new FtcChoiceMenu<>("Match type:", null, robot);
-        FtcValueMenu matchNumberMenu = new FtcValueMenu(
-                "Match number:", matchTypeMenu, robot,
-                1.0, 50.0, 1.0, 1.0, "%.0f");
-        FtcChoiceMenu<Alliance> allianceMenu = new FtcChoiceMenu<>("Alliance:", matchNumberMenu, robot);
+//        FtcChoiceMenu<MatchType> matchTypeMenu = new FtcChoiceMenu<>("Match type:", null, robot);
+//        FtcValueMenu matchNumberMenu = new FtcValueMenu(
+//                "Match number:", matchTypeMenu, robot,
+//                1.0, 50.0, 1.0, 1.0, "%.0f");
+        FtcChoiceMenu<Alliance> allianceMenu = new FtcChoiceMenu<>("Alliance:", null, robot);
         FtcValueMenu delayMenu = new FtcValueMenu(
                 "Delay time:", allianceMenu, robot,
                 0.0, 30.0, 1.0, 0.0, " %.0f sec");
@@ -181,16 +181,17 @@ public class FtcAuto extends FtcOpMode
 //        FtcValueMenu drivePowerMenu = new FtcValueMenu(
 //                "Drive power:", strategyMenu, robot, -1.0, 1.0, 0.1, 0.5, " %.1f");
 
-        matchNumberMenu.setChildMenu(allianceMenu);
+//        matchNumberMenu.setChildMenu(allianceMenu);
 //        driveTimeMenu.setChildMenu(drivePowerMenu);
+        delayMenu.setChildMenu(strategyMenu);
 
         //
         // Populate choice menus.
         //
-        matchTypeMenu.addChoice("Practice", MatchType.PRACTICE, true, matchNumberMenu);
-        matchTypeMenu.addChoice("Qualification", MatchType.QUALIFICATION, false, matchNumberMenu);
-        matchTypeMenu.addChoice("Semi-final", MatchType.SEMI_FINAL, false, matchNumberMenu);
-        matchTypeMenu.addChoice("Final", MatchType.FINAL, false, matchNumberMenu);
+//        matchTypeMenu.addChoice("Practice", MatchType.PRACTICE, true, matchNumberMenu);
+//        matchTypeMenu.addChoice("Qualification", MatchType.QUALIFICATION, false, matchNumberMenu);
+//        matchTypeMenu.addChoice("Semi-final", MatchType.SEMI_FINAL, false, matchNumberMenu);
+//        matchTypeMenu.addChoice("Final", MatchType.FINAL, false, matchNumberMenu);
 
         allianceMenu.addChoice("Red", Alliance.RED_ALLIANCE, true, delayMenu);
         allianceMenu.addChoice("Blue", Alliance.BLUE_ALLIANCE, false, delayMenu);
@@ -204,12 +205,12 @@ public class FtcAuto extends FtcOpMode
         //
         // Traverse menus.
         //
-        FtcMenu.walkMenuTree(matchTypeMenu);
+        FtcMenu.walkMenuTree(allianceMenu);
         //
         // Fetch choices.
         //
-        matchType = matchTypeMenu.getCurrentChoiceObject();
-        matchNumber = (int)matchNumberMenu.getCurrentValue();
+//        matchType = matchTypeMenu.getCurrentChoiceObject();
+//        matchNumber = (int)matchNumberMenu.getCurrentValue();
         alliance = allianceMenu.getCurrentChoiceObject();
         delay = delayMenu.getCurrentValue();
         strategy = strategyMenu.getCurrentChoiceObject();
@@ -226,6 +227,7 @@ public class FtcAuto extends FtcOpMode
         robot.dashboard.displayPrintf(3, "Alliance=%s,Delay=%.0f sec", alliance.toString(), delay);
 //        robot.dashboard.displayPrintf(4, "Drive: distance=%.0f ft,Time=%.0f,Power=%.1f",
 //                                      driveDistance, driveTime, drivePower);
+        telemetry.update();
     }   //doMenus
 
 }   //class FtcAuto

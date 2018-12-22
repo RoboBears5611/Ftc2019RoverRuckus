@@ -22,7 +22,12 @@
 
 package ftclib;
 
+import android.content.res.Resources;
+
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.vuforia.ViewerParameters;
+
+import java.security.InvalidParameterException;
 
 import trclib.TrcDbgTrace;
 import trclib.TrcGameController;
@@ -694,5 +699,40 @@ public class FtcGamepad extends TrcGameController
 
         return buttons;
     }   //getButtons
+
+    public boolean getButton(int Button){
+        switch(Button){
+            case GAMEPAD_A:
+                return gamepad.a;
+            case GAMEPAD_B:
+                return gamepad.b;
+            case GAMEPAD_X:
+                return gamepad.x;
+            case GAMEPAD_Y:
+                return gamepad.y;
+            case GAMEPAD_BACK:
+                return gamepad.back;
+            case GAMEPAD_START:
+                return gamepad.start;
+            case GAMEPAD_LBUMPER:
+                return gamepad.left_bumper;
+            case GAMEPAD_RBUMPER:
+                return gamepad.right_bumper;
+            case GAMEPAD_LSTICK_BTN:
+                return gamepad.left_stick_button;
+            case GAMEPAD_RSTICK_BTN:
+                return gamepad.right_stick_button;
+            case GAMEPAD_DPAD_DOWN:
+                return gamepad.dpad_down;
+            case GAMEPAD_DPAD_UP:
+                return gamepad.dpad_up;
+            case GAMEPAD_DPAD_LEFT:
+                return gamepad.dpad_left;
+            case GAMEPAD_DPAD_RIGHT:
+                return gamepad.dpad_right;
+            default:
+                throw new InvalidParameterException("The supplied button code ("+ Button+") is not recognized");
+        }
+    }
 
 }   //class FtcGamepad
