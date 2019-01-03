@@ -27,18 +27,18 @@ SOFTWARE.
             <NeveRest40Gearmotor name="lrWheel" port="1" />
             <NeveRest40Gearmotor name="rfWheel" port="2" />
             <NeveRest40Gearmotor name="rrWheel" port="3" />
-            <Servo name="sweeperServo" port="0" />
+            <Servo name="scooperServo" port="0" />
             <Servo name="deployerServo" port="1" />
             <Servo name="hookServo" port="2" />
             <DigitalDevice name="elevatorLowerLimit" port="0" />
             <DigitalDevice name="elevatorUpperLimit" port="1" />
-            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+            <LynxEmbeddedIMU name="imu 1" port="0" bus="0" />
             <I2cSyncDevice name="pixy" port="0" bus="1" />
         </LynxModule>
         <LynxModule name="Expansion Hub 3" port="3">
             <RevRobotics40HDHexMotor name="elevatorMotor" port="0" />
             <Motor name="pixyRingLight" port="1" />
-            <LynxEmbeddedIMU name="imu 1" port="0" bus="0" />
+            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
         </LynxModule>
     </LynxUsbDevice>
 </Robot>

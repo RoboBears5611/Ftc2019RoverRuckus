@@ -26,11 +26,12 @@ import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
-import common.MineralSweeper;
+import common.MineralScooper;
 import common.PixyVision;
 import common.Robot;
 import common.RobotInfo;
 import common.TeamMarkerDeployer;
+import common.TensorFlowVision;
 import common.VuforiaVision;
 import ftclib.FtcDcMotor;
 import trclib.TrcMecanumDriveBase;
@@ -46,8 +47,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 public class Robot3543 extends Robot
 {
-    public static final boolean USE_VUFORIA = true;
-    public static final boolean USE_PIXY = true;
+    public static final boolean USE_VUFORIA = false;
+    public static final boolean USE_PIXY = false;
+    public static final boolean USE_TENSORFLOW = true;
 
     static final String ROBOT_NAME = "Robot3543";
     //
@@ -67,9 +69,9 @@ public class Robot3543 extends Robot
         //
         if (USE_VUFORIA)
         {
-            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
             final int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier(
                     "cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
             /*
              * Create a transformation matrix describing where the phone is on the robot.
              *
@@ -115,6 +117,18 @@ public class Robot3543 extends Robot
                     PixyVision.Orientation.NORMAL_LANDSCAPE, 80);
         }
         //
+        // TensorFlow slows down our threads really badly, so don't enable it if we don't need it.
+        //
+        if (USE_TENSORFLOW && (runMode == TrcRobot.RunMode.AUTO_MODE || runMode == TrcRobot.RunMode.TEST_MODE))
+        {
+            int tfodMonitorViewId = opMode.hardwareMap.appContext.getResources().getIdentifier(
+                    "tfodMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
+            tensorFlowVision = new TensorFlowVision(-1/*tfodMonitorViewId*/, CAMERA_DIR, globalTracer);
+            tensorFlowVision.setEnabled(true);
+            globalTracer.traceInfo("Robot3543", "Enabling TensorFlow.");
+        }
+        //
         // Initialize DriveBase.
         //
         leftFrontWheel = new FtcDcMotor("lfWheel");
@@ -126,6 +140,11 @@ public class Robot3543 extends Robot
         rightFrontWheel.motor.setMode(RobotInfo3543.DRIVE_MOTOR_MODE);
         leftRearWheel.motor.setMode(RobotInfo3543.DRIVE_MOTOR_MODE);
         rightRearWheel.motor.setMode(RobotInfo3543.DRIVE_MOTOR_MODE);
+
+        leftFrontWheel.setOdometryEnabled(true);
+        rightFrontWheel.setOdometryEnabled(true);
+        leftRearWheel.setOdometryEnabled(true);
+        rightRearWheel.setOdometryEnabled(true);
 
         if (USE_VELOCITY_CONTROL)
         {
@@ -149,6 +168,7 @@ public class Robot3543 extends Robot
 
         driveBase = new TrcMecanumDriveBase(leftFrontWheel, leftRearWheel, rightFrontWheel, rightRearWheel, gyro);
         driveBase.setPositionScales(RobotInfo3543.ENCODER_X_INCHES_PER_COUNT, RobotInfo3543.ENCODER_Y_INCHES_PER_COUNT);
+
         //
         // Initialize PID drive.
         //
@@ -173,14 +193,15 @@ public class Robot3543 extends Robot
         pidDrive = new TrcPidDrive("pidDrive", driveBase, encoderXPidCtrl, encoderYPidCtrl, gyroPidCtrl);
         pidDrive.setStallTimeout(RobotInfo3543.PIDDRIVE_STALL_TIMEOUT);
         pidDrive.setBeep(androidTone);
+        pidDrive.setMsgTracer(globalTracer, true);
         //
         // Initialize other subsystems.
         //
         elevator = new Elevator3543();
-        mineralSweeper = new MineralSweeper(
-                RobotInfo3543.MINERAL_SWEEPER_EXTEND_POSITION, RobotInfo3543.MINERAL_SWEEPER_RETRACT_POSITION);
         teamMarkerDeployer = new TeamMarkerDeployer(
                 RobotInfo3543.DEPLOYER_OPEN_POSITION, RobotInfo3543.DEPLOYER_CLOSE_POSITION);
+        mineralScooper = new MineralScooper(
+                RobotInfo3543.MINERAL_SCOOPER_EXTEND_POSITION, RobotInfo3543.MINERAL_SCOOPER_RETRACT_POSITION);
         //
         // Tell the driver initialization is complete.
         //

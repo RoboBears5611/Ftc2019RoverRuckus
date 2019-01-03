@@ -25,6 +25,7 @@ package common;
 import org.opencv.core.Rect;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import ftclib.FtcDcMotor;
 import ftclib.FtcPixyCam;
@@ -57,7 +58,7 @@ public class PixyVision
 
         public String toString()
         {
-            return String.format("Rect[%d,%d,%d,%d], xDistance=%.1f, yDistance=%.1f, angle=%.1f",
+            return String.format(Locale.US, "Rect[%d,%d,%d,%d], xDistance=%.1f, yDistance=%.1f, angle=%.1f",
                     rect.x, rect.y, rect.width, rect.height, xDistance, yDistance, angle);
         }
     }   //class TargetInfo
@@ -163,7 +164,7 @@ public class PixyVision
 
         if (debugEnabled)
         {
-            robot.tracer.traceInfo(
+            robot.globalTracer.traceInfo(
                     funcName, "%s object(s) found", detectedObjects != null? "" + detectedObjects.length: "null");
         }
 
@@ -217,11 +218,18 @@ public class PixyVision
                     Rect rect = new Rect(detectedObjects[i].centerX - detectedObjects[i].width/2,
                             detectedObjects[i].centerY - detectedObjects[i].height/2,
                             detectedObjects[i].width, detectedObjects[i].height);
-                    objectList.add(rect);
+                    //
+                    // The mineral will be at the lower screen of the camera. If we spot anything at the upper
+                    // screen, they are considered false targets, so discard them.
+                    //
+                    if (rect.y >= (PIXYCAM_HEIGHT / 2))
+                    {
+                        objectList.add(rect);
+                    }
 
                     if (debugEnabled)
                     {
-                        robot.tracer.traceInfo(funcName, "[%d] %s", i, detectedObjects[i].toString());
+                        robot.globalTracer.traceInfo(funcName, "[%d] %s", i, detectedObjects[i].toString());
                     }
                 }
             }
@@ -249,14 +257,14 @@ public class PixyVision
 
                 if (debugEnabled)
                 {
-                    robot.tracer.traceInfo(funcName, "===TargetRect===: x=%d, y=%d, w=%d, h=%d",
+                    robot.globalTracer.traceInfo(funcName, "===TargetRect===: x=%d, y=%d, w=%d, h=%d",
                             targetRect.x, targetRect.y, targetRect.width, targetRect.height);
                 }
             }
 
             if (targetRect == null)
             {
-                robot.tracer.traceInfo(funcName, "===TargetRect=== None, is now null");
+                robot.globalTracer.traceInfo(funcName, "===TargetRect=== None, is now null");
             }
 
             lastTargetRect = targetRect;
@@ -306,7 +314,7 @@ public class PixyVision
 
             if (debugEnabled)
             {
-                robot.tracer.traceInfo(
+                robot.globalTracer.traceInfo(
                         funcName, "###TargetInfo###: xDist=%.1f, yDist=%.1f, angle=%.1f",
                         targetXDistance, targetYDistance, targetAngle);
             }

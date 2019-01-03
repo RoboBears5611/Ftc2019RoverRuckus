@@ -23,7 +23,6 @@
 package common;
 
 import android.speech.tts.TextToSpeech;
-import android.widget.TextView;
 
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
@@ -46,6 +45,7 @@ import trclib.TrcSimpleDriveBase;
 public class Robot implements FtcMenu.MenuButtons
 {
     public static final boolean USE_SPEECH = true;
+    public static final boolean MONITOR_BATTERY = false;
     public static final boolean USE_VELOCITY_CONTROL = false;
     //
     // Global objects.
@@ -53,15 +53,21 @@ public class Robot implements FtcMenu.MenuButtons
     public String moduleName;
     public FtcOpMode opMode;
     public HalDashboard dashboard;
-    public TrcDbgTrace tracer;
-    public FtcRobotBattery battery = null;
+    public TrcDbgTrace globalTracer;
     public FtcAndroidTone androidTone;
     public TextToSpeech textToSpeech = null;
+    public FtcRobotBattery battery = null;
     //
     // Vision subsystems.
     //
     public VuforiaVision vuforiaVision = null;
     public PixyVision pixyVision = null;
+    public TensorFlowVision tensorFlowVision = null;
+    public TensorFlowVision.TargetInfo targetInfo = null;
+    public long detectionIntervalTotalTime = 0;
+    public long detectionIntervalStartTime = 0;
+    public int detectionSuccessCount = 0;
+    public int detectionFailedCount = 0;
     //
     // Sensors.
     //
@@ -77,16 +83,18 @@ public class Robot implements FtcMenu.MenuButtons
     public FtcDcMotor leftRearWheel = null;
     public FtcDcMotor rightRearWheel = null;
 
+    public TrcSimpleDriveBase driveBase = null;
     public TrcPidController encoderXPidCtrl = null;
     public TrcPidController encoderYPidCtrl = null;
     public TrcPidController gyroPidCtrl = null;
-    public TrcSimpleDriveBase driveBase = null;
     public TrcPidDrive pidDrive = null;
+
+    public TrcPidController.PidCoefficients tunePidCoeff = new TrcPidController.PidCoefficients();
     //
     // Other common subsystems.
     //
-    public MineralSweeper mineralSweeper = null;
     public TeamMarkerDeployer teamMarkerDeployer = null;
+    public MineralScooper mineralScooper = null;
 
     public Robot(TrcRobot.RunMode runMode)
     {
@@ -96,16 +104,20 @@ public class Robot implements FtcMenu.MenuButtons
         opMode = FtcOpMode.getInstance();
         opMode.hardwareMap.logDevices();
         dashboard = HalDashboard.getInstance();
-        tracer = FtcOpMode.getGlobalTracer();
+        globalTracer = FtcOpMode.getGlobalTracer();
         dashboard.setTextView(
-                (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
-        battery = new FtcRobotBattery();
+                ((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
         androidTone = new FtcAndroidTone("AndroidTone");
 
         if (USE_SPEECH)
         {
             textToSpeech = FtcOpMode.getInstance().getTextToSpeech();
             speak("Init starting");
+        }
+
+        if (MONITOR_BATTERY)
+        {
+            battery = new FtcRobotBattery();
         }
         //
         // Initialize sensors.
@@ -124,12 +136,12 @@ public class Robot implements FtcMenu.MenuButtons
         if (robotLocation != null)
         {
             robotOrientation = vuforiaVision.getLocationOrientation(robotLocation).thirdAngle;
-            tracer.traceInfo(funcName, "Vuforia detected heading: %.1f", robotOrientation);
+            globalTracer.traceInfo(funcName, "Vuforia detected heading: %.1f", robotOrientation);
             speak(String.format("Robot angle is %.1f degrees", robotOrientation));
         }
         else
         {
-            tracer.traceInfo(funcName, "Default heading: %.1f", robotOrientation);
+            globalTracer.traceInfo(funcName, "Default heading: %.1f", robotOrientation);
         }
 
         targetHeading = robotOrientation;
@@ -151,28 +163,33 @@ public class Robot implements FtcMenu.MenuButtons
 
     public void startMode(TrcRobot.RunMode runMode)
     {
+        final String funcName = "startMode";
         //
         // Since the IMU gyro is giving us cardinal heading, we need to enable its cardinal to cartesian converter.
         //
-        gyro.resetZIntegrator();
         gyro.setEnabled(true);
         targetHeading = 0.0;
-
-        if (vuforiaVision != null)
-        {
-            vuforiaVision.setEnabled(true);
-        }
         //
         // Vision generally will impact performance, so we only enable it if it's needed such as in autonomous.
         //
+        if (vuforiaVision != null && runMode == TrcRobot.RunMode.AUTO_MODE)
+        {
+            globalTracer.traceInfo(funcName, "Enabling Vuforia.");
+            vuforiaVision.setEnabled(true);
+        }
+
         if (pixyVision != null && runMode == TrcRobot.RunMode.AUTO_MODE)
         {
+            globalTracer.traceInfo(funcName, "Enabling Pixy Camera.");
             pixyVision.setCameraEnabled(true);
         }
         //
-        // Reset all X, Y and heading values.
+        // Enable odometry only for autonomous or test modes.
         //
-        driveBase.resetOdometry();
+        if (runMode == TrcRobot.RunMode.AUTO_MODE || runMode == TrcRobot.RunMode.TEST_MODE)
+        {
+            driveBase.setOdometryEnabled(true);
+        }
     }   //startMode
 
     public void stopMode(TrcRobot.RunMode runMode)
@@ -197,17 +214,37 @@ public class Robot implements FtcMenu.MenuButtons
         {
             pixyVision.setCameraEnabled(false);
         }
+
+        if (tensorFlowVision != null)
+        {
+            globalTracer.traceInfo("RobotStopMode", "Shutting down TensorFlow.");
+            tensorFlowVision.shutdown();
+            tensorFlowVision = null;
+        }
+
+        driveBase.setOdometryEnabled(false);
     }   //stopMode
 
     public void traceStateInfo(double elapsedTime, String stateName, double xDistance, double yDistance, double heading)
     {
-        tracer.traceInfo(
-                moduleName,
-                "[%5.3f] >>>>> %s: xPos=%6.2f/%6.2f,yPos=%6.2f/%6.2f,heading=%6.1f/%6.1f,volt=%5.2fV(%5.2fV)",
-                elapsedTime, stateName,
-                driveBase.getXPosition(), xDistance, driveBase.getYPosition(), yDistance,
-                getHeading(), heading, battery.getVoltage(), battery.getLowestVoltage());
-    }   //traceStateInfo
+        if (battery != null)
+        {
+            globalTracer.traceInfo(
+                    moduleName,
+                    "[%5.3f] >>>>> %s: xPos=%6.2f/%6.2f,yPos=%6.2f/%6.2f,heading=%6.1f/%6.1f,volt=%5.2fV(%5.2fV)",
+                    elapsedTime, stateName,
+                    driveBase.getXPosition(), xDistance, driveBase.getYPosition(), yDistance, getHeading(), heading,
+                    battery.getVoltage(), battery.getLowestVoltage());
+        }
+        else
+        {
+            globalTracer.traceInfo(
+                    moduleName,
+                    "[%5.3f] >>>>> %s: xPos=%6.2f/%6.2f,yPos=%6.2f/%6.2f,heading=%6.1f/%6.1f",
+                    elapsedTime, stateName,
+                    driveBase.getXPosition(), xDistance, driveBase.getYPosition(), yDistance, getHeading(), heading);
+        }
+   }   //traceStateInfo
 
     //
     // Implements FtcMenu.MenuButtons interface.
@@ -224,6 +261,18 @@ public class Robot implements FtcMenu.MenuButtons
     {
         return opMode.gamepad1.dpad_down;
     }   //isMenuDownButton
+
+    @Override
+    public boolean isMenuAltUpButton()
+    {
+        return opMode.gamepad1.left_bumper;
+    }   //isMenuAltUpButton
+
+    @Override
+    public boolean isMenuAltDownButton()
+    {
+        return opMode.gamepad1.right_bumper;
+    }   //isMenuAltDownButton
 
     @Override
     public boolean isMenuEnterButton()

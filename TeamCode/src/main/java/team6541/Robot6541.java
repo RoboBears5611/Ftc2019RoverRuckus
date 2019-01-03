@@ -26,11 +26,12 @@ import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
-import common.MineralSweeper;
+import common.MineralScooper;
 import common.PixyVision;
 import common.Robot;
 import common.RobotInfo;
 import common.TeamMarkerDeployer;
+import common.TensorFlowVision;
 import common.VuforiaVision;
 import ftclib.FtcDcMotor;
 import trclib.TrcPidController;
@@ -46,8 +47,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 
 public class Robot6541 extends Robot
 {
-    public static final boolean USE_VUFORIA = true;
-    public static final boolean USE_PIXY = true;
+    public static final boolean USE_VUFORIA = false;
+    public static final boolean USE_PIXY = false;
+    public static final boolean USE_TENSORFLOW = true;
 
     static final String ROBOT_NAME = "Robot6541";
     //
@@ -67,9 +69,9 @@ public class Robot6541 extends Robot
         //
         if (USE_VUFORIA)
         {
-            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
             final int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier(
                     "cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
             /*
              * Create a transformation matrix describing where the phone is on the robot.
              *
@@ -106,7 +108,7 @@ public class Robot6541 extends Robot
                     .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
                             CAMERA_DIR == BACK? -90: 90, 0, 0));
 
-            vuforiaVision = new VuforiaVision(this, cameraViewId, CAMERA_DIR, phoneLocationOnRobot);
+            vuforiaVision = new VuforiaVision(this, /*cameraViewId*/-1, CAMERA_DIR, phoneLocationOnRobot);
         }
 
         if (USE_PIXY)
@@ -115,17 +117,35 @@ public class Robot6541 extends Robot
                     PixyVision.Orientation.NORMAL_LANDSCAPE, 80);
         }
         //
+        // TensorFlow slows down our threads really badly, so don't enable it if we don't need it.
+        //
+        if (USE_TENSORFLOW && (runMode == TrcRobot.RunMode.AUTO_MODE || runMode == TrcRobot.RunMode.TEST_MODE))
+        {
+            int tfodMonitorViewId = opMode.hardwareMap.appContext.getResources().getIdentifier(
+                    "tfodMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            final VuforiaLocalizer.CameraDirection CAMERA_DIR = BACK;
+            tensorFlowVision = new TensorFlowVision(-1/*tfodMonitorViewId*/, CAMERA_DIR, globalTracer);
+            tensorFlowVision.setEnabled(true);
+            globalTracer.traceInfo("Robot3543", "Enabling TensorFlow.");
+        }
+        //
         // Initialize DriveBase.
         //
         leftFrontWheel = new FtcDcMotor("lfWheel");
         rightFrontWheel = new FtcDcMotor("rfWheel");
-        leftRearWheel = new FtcDcMotor("lrWheel");
-        rightRearWheel = new FtcDcMotor("rrWheel");
+
+        leftRearWheel = new RearWheelMotor("lrWheel", leftFrontWheel);
+        rightRearWheel = new RearWheelMotor("rrWheel", rightFrontWheel);
 
         leftFrontWheel.motor.setMode(RobotInfo6541.DRIVE_MOTOR_MODE);
         rightFrontWheel.motor.setMode(RobotInfo6541.DRIVE_MOTOR_MODE);
         leftRearWheel.motor.setMode(RobotInfo6541.DRIVE_MOTOR_MODE);
         rightRearWheel.motor.setMode(RobotInfo6541.DRIVE_MOTOR_MODE);
+
+        leftFrontWheel.setOdometryEnabled(true);
+        rightFrontWheel.setOdometryEnabled(true);
+        leftRearWheel.setOdometryEnabled(true);
+        rightRearWheel.setOdometryEnabled(true);
 
         if (USE_VELOCITY_CONTROL)
         {
@@ -139,7 +159,7 @@ public class Robot6541 extends Robot
 
         leftFrontWheel.setInverted(false);
         leftRearWheel.setInverted(false);
-        rightFrontWheel.setInverted(false);
+        rightFrontWheel.setInverted(true);
         rightRearWheel.setInverted(true);
 
         leftFrontWheel.setBrakeModeEnabled(true);
@@ -168,14 +188,15 @@ public class Robot6541 extends Robot
         pidDrive = new TrcPidDrive("pidDrive", driveBase, null, encoderYPidCtrl, gyroPidCtrl);
         pidDrive.setStallTimeout(RobotInfo6541.PIDDRIVE_STALL_TIMEOUT);
         pidDrive.setBeep(androidTone);
+        pidDrive.setMsgTracer(globalTracer, true);
         //
         // Initialize other subsystems.
         //
         elevator = new Elevator6541();
-        mineralSweeper = new MineralSweeper(
-                RobotInfo6541.MINERAL_SWEEPER_EXTEND_POSITION, RobotInfo6541.MINERAL_SWEEPER_RETRACT_POSITION);
         teamMarkerDeployer = new TeamMarkerDeployer(
                 RobotInfo6541.DEPLOYER_OPEN_POSITION, RobotInfo6541.DEPLOYER_CLOSE_POSITION);
+        mineralScooper = new MineralScooper(
+                RobotInfo6541.MINERAL_SCOOPER_EXTEND_POSITION, RobotInfo6541.MINERAL_SCOOPER_RETRACT_POSITION);
         //
         // Tell the driver initialization is complete.
         //

@@ -23,12 +23,14 @@
 package common;
 
 import java.util.Date;
+import java.util.Locale;
 
 import ftclib.FtcChoiceMenu;
 import ftclib.FtcMenu;
 import ftclib.FtcOpMode;
 import ftclib.FtcValueMenu;
 import trclib.TrcRobot;
+import trclib.TrcUtil;
 
 public abstract class AutoCommon extends FtcOpMode
 {
@@ -59,6 +61,7 @@ public abstract class AutoCommon extends FtcOpMode
 
     private static final String moduleName = "FtcAuto";
     private Robot robot;
+
     protected TrcRobot.RobotCommand autoCommand = null;
     protected MatchType matchType = MatchType.PRACTICE;
     protected int matchNumber = 0;
@@ -84,24 +87,98 @@ public abstract class AutoCommon extends FtcOpMode
     //
 
     @Override
-    public void startMode(TrcRobot.RunMode runMode)
+    public void initPeriodic()
     {
-        robot.tracer.traceInfo(moduleName, "%s: ***** Starting autonomous *****", new Date());
-        robot.startMode(TrcRobot.RunMode.AUTO_MODE);
-        robot.battery.setTaskEnabled(true);
+        if (robot.tensorFlowVision != null)
+        {
+            TensorFlowVision.TargetInfo targetInfo =
+                    robot.tensorFlowVision.getTargetInfo(
+                            TensorFlowVision.LABEL_GOLD_MINERAL, TensorFlowVision.NUM_EXPECTED_TARGETS);
+
+            if (targetInfo != null)
+            {
+                long currNanoTime = TrcUtil.getCurrentTimeNanos();
+
+                robot.detectionSuccessCount++;
+                robot.targetInfo = targetInfo;
+                if (robot.detectionIntervalStartTime == 0)
+                {
+                    //
+                    // This is the first time we detected target.
+                    //
+                    robot.detectionIntervalStartTime = currNanoTime;
+                }
+                else
+                {
+                    //
+                    // Sum the interval between each successful detection.
+                    //
+                    robot.detectionIntervalTotalTime += currNanoTime - robot.detectionIntervalStartTime;
+                    robot.detectionIntervalStartTime = currNanoTime;
+                }
+            }
+            else
+            {
+                robot.detectionFailedCount++;
+            }
+        }
+        else
+        {
+            super.initPeriodic();
+        }
+    }   //initPeriodic
+
+    @Override
+    public void startMode(TrcRobot.RunMode prevMode, TrcRobot.RunMode nextMode)
+    {
+        if (USE_TRACELOG)
+        {
+            robot.globalTracer.setTraceLogEnabled(true);
+        }
+        robot.globalTracer.traceInfo(moduleName, "%s: ***** Starting autonomous *****", new Date());
+        robot.startMode(nextMode);
+
+        if (robot.tensorFlowVision != null)
+        {
+            String msg;
+
+            if (robot.targetInfo != null)
+            {
+                msg = String.format(Locale.US, "Gold mineral found at position %d",
+                        robot.targetInfo.rect.x + robot.targetInfo.rect.width/2);
+            }
+            else
+            {
+                msg = "Gold mineral not found";
+            }
+            robot.globalTracer.traceInfo(moduleName, "%s: DetectionAvgTime=%.3f, SuccessCount=%d, FailedCount=%d",
+                    msg, robot.detectionIntervalTotalTime/robot.detectionSuccessCount/1000000000.0,
+                    robot.detectionSuccessCount, robot.detectionFailedCount);
+            robot.globalTracer.traceInfo(moduleName, "Shutting down TensorFlow.");
+            robot.tensorFlowVision.shutdown();
+            robot.tensorFlowVision = null;
+        }
+
+        if (robot.battery != null)
+        {
+            robot.battery.setEnabled(true);
+        }
         robot.dashboard.clearDisplay();
     }   //startMode
 
     @Override
-    public void stopMode(TrcRobot.RunMode runMode)
+    public void stopMode(TrcRobot.RunMode prevMode, TrcRobot.RunMode nextMode)
     {
-        robot.stopMode(TrcRobot.RunMode.AUTO_MODE);
-        robot.battery.setTaskEnabled(false);
-        printPerformanceMetrics(robot.tracer);
+        robot.stopMode(prevMode);
+        if (robot.battery != null)
+        {
+            robot.battery.setEnabled(false);
+        }
+        printPerformanceMetrics(robot.globalTracer);
 
         if (USE_TRACELOG)
         {
-            robot.tracer.closeTraceLog();
+            robot.globalTracer.closeTraceLog();
         }
     }   //stopMode
 
@@ -140,17 +217,13 @@ public abstract class AutoCommon extends FtcOpMode
 
         FtcChoiceMenu<Boolean> doTeammateMineralMenu = new FtcChoiceMenu<>(
                 "Do Teammate Mineral:", strategyMenu, robot);
-        FtcChoiceMenu<Boolean> startHungMenu = new FtcChoiceMenu<>(
-                "Start Hung:", strategyMenu, robot);
-        FtcChoiceMenu<Boolean> doMineralMenu = new FtcChoiceMenu<>(
-                "Do Mineral:", startHungMenu, robot);
-        FtcChoiceMenu<Boolean> doTeamMarkerMenu = new FtcChoiceMenu<>(
-                "Do Team Marker:", doMineralMenu, robot);
+        FtcChoiceMenu<Boolean> startHungMenu = new FtcChoiceMenu<>("Start Hung:", strategyMenu, robot);
+        FtcChoiceMenu<Boolean> doMineralMenu = new FtcChoiceMenu<>("Do Mineral:", startHungMenu, robot);
+        FtcChoiceMenu<Boolean> doTeamMarkerMenu = new FtcChoiceMenu<>("Do Team Marker:", doMineralMenu, robot);
 
         matchNumberMenu.setChildMenu(allianceMenu);
         delayMenu.setChildMenu(strategyMenu);
         driveTimeMenu.setChildMenu(drivePowerMenu);
-
         //
         // Populate choice menus.
         //

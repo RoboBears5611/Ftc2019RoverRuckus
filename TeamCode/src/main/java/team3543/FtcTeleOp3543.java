@@ -29,7 +29,7 @@ import ftclib.FtcGamepad;
 import trclib.TrcGameController;
 import trclib.TrcRobot;
 
-@TeleOp(name="TeleOp3543", group="TeleOp")
+@TeleOp(name="TeleOp3543", group="FtcTeleOp")
 public class FtcTeleOp3543 extends TeleOpCommon implements TrcGameController.ButtonHandler
 {
     protected static String moduleName = "FtcTeleOp3543";
@@ -44,8 +44,9 @@ public class FtcTeleOp3543 extends TeleOpCommon implements TrcGameController.But
     {
         //
         // Initializing robot objects.
+        // FtcTeleOp is also extended by FtcTest so we cannot assume runMode is TELEOP.
         //
-        robot = new Robot3543(TrcRobot.RunMode.TELEOP_MODE);
+        robot = new Robot3543(TrcRobot.getRunMode());
         driveMode = DriveMode.MECANUM_MODE;
         super.setRobot(robot);
         super.initRobot();
@@ -131,14 +132,14 @@ public class FtcTeleOp3543 extends TeleOpCommon implements TrcGameController.But
                 case FtcGamepad.GAMEPAD_DPAD_UP:
                     if (pressed)
                     {
-                        robot.mineralSweeper.retract();
+                        robot.mineralScooper.extend();
                     }
                     break;
 
                 case FtcGamepad.GAMEPAD_DPAD_DOWN:
                     if (pressed)
                     {
-                        robot.mineralSweeper.extend();
+                        robot.mineralScooper.retract();
                     }
                     break;
 

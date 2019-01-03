@@ -34,44 +34,50 @@ class RobotInfo6541 extends RobotInfo
     static final DcMotor.RunMode DRIVE_MOTOR_MODE               = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
     static final double TURN_POWER_LIMIT                        = 0.5;
     //
-    // 2018-10-27: Kp=0.035, Ki=0.0, Kd=0.0025, Scale=0.0172934
+    // 2018-11-02: Kp=0.1, Ki=0.0, Kd=0.0, Scale=0.0152133737
+    // 2018-11-29: Kp=0.1, Ki=0.0, Kd=0.01, Scale=0.0150461720101369
     //
-    static final double ENCODER_Y_KP                            = 0.035;
+    static final double ENCODER_Y_KP                            = 0.1;
     static final double ENCODER_Y_KI                            = 0.0;
-    static final double ENCODER_Y_KD                            = 0.0025;
+    static final double ENCODER_Y_KD                            = 0.01;
     static final double ENCODER_Y_TOLERANCE                     = 1.0;
-    static final double ENCODER_Y_INCHES_PER_COUNT              = 0.0172934;
+    static final double ENCODER_Y_INCHES_PER_COUNT              = 0.0150461720101369;
     //
-    // 2018-10-27: Kp=0.025, Ki=0.0, Kd=0.0
+    // 2018-11-02: Kp=0.025, Ki=0.0, Kd=0.002
+    // 2018-11-29: Kp=0.022, Ki=0.0, Kd=0.0025
     //
-    static final double GYRO_KP                                 = 0.025;
+    static final double GYRO_KP                                 = 0.02;
     static final double GYRO_KI                                 = 0.0;
-    static final double GYRO_KD                                 = 0.0;
-    static final double GYRO_TOLERANCE                          = 1.0;
+    static final double GYRO_KD                                 = 0.00275;
+    static final double GYRO_TOLERANCE                          = 2.0;
 
-    static final double PIDDRIVE_STALL_TIMEOUT                  = 0.25;     //in msec.
+    static final double PIDDRIVE_STALL_TIMEOUT                  = 0.5;     //in seconds.
     //
     // Elevator subsystem.
-    // 2018-10-27: Kp=3.0, Ki=0.0, Kd=0.0, Scale=5.625/8498
+    // 2018-10-27: Kp=3.0, Ki=0.0, Kd=0.0, Scale=0.001219829114490629
     //
-    public static final double ELEVATOR_INCHES_PER_COUNT        = 5.625/8498;
-    public static final double ELEVATOR_ZERO_OFFSET             = 15.8;
+    public static final double ELEVATOR_INCHES_PER_COUNT        = 0.001219829114490629;
+    public static final double ELEVATOR_ZERO_OFFSET             = 16.75;
     public static final double ELEVATOR_KP                      = 3.0;
     public static final double ELEVATOR_KI                      = 0.0;
     public static final double ELEVATOR_KD                      = 0.0;
     public static final double ELEVATOR_TOLERANCE               = 0.2;
     public static final double ELEVATOR_MIN_HEIGHT              = ELEVATOR_ZERO_OFFSET - 0.1;
-    public static final double ELEVATOR_MAX_HEIGHT              = 24.0;
-    public static final double ELEVATOR_HANGING_HEIGHT          = ELEVATOR_MAX_HEIGHT - 1.0;
+    public static final double ELEVATOR_MAX_HEIGHT              = 22.75;
+    public static final double ELEVATOR_HANGING_HEIGHT          = 21.7;
     public static final double ELEVATOR_CAL_POWER               = 0.3;
     //
     // Other subsystems.
     //
-    public static final double MINERAL_SWEEPER_EXTEND_POSITION  = 0.8;
-    public static final double MINERAL_SWEEPER_RETRACT_POSITION = 0.2;
-    public static final double DEPLOYER_OPEN_POSITION           = 0.8;
-    public static final double DEPLOYER_CLOSE_POSITION          = 0.2;
-    public static final double HANGING_HOOK_OPEN_POSITION       = 0.8;
-    public static final double HANGING_HOOK_CLOSE_POSITION      = 0.2;
+    public static final double DEPLOYER_OPEN_POSITION           = 0.2;
+    public static final double DEPLOYER_CLOSE_POSITION          = 0.8;
+    public static final double HANGING_HOOK_OPEN_POSITION       = 0.2;
+    public static final double HANGING_HOOK_CLOSE_POSITION      = 0.7;
+    public static final double MINERAL_SCOOPER_EXTEND_POSITION  = 0.0;
+    public static final double MINERAL_SCOOPER_RETRACT_POSITION = 0.7;
+    //
+    // Vision subsystem.
+    //
+    public static final double SIDE_MINERAL_ANGLE               = 30.0;
 
 }   //class RobotInfo6541

@@ -37,6 +37,13 @@ import trclib.TrcUtil;
 public class TestCommon
 {
     private static final String moduleName = "FtcTest";
+    //
+    // Made the following menus static so their values will persist across different runs of PID tuning.
+    //
+    private static FtcValueMenu tuneKpMenu = null;
+    private static FtcValueMenu tuneKiMenu = null;
+    private static FtcValueMenu tuneKdMenu = null;
+    private static FtcValueMenu tuneKfMenu = null;
 
     private enum Test
     {
@@ -46,7 +53,10 @@ public class TestCommon
         Y_TIMED_DRIVE,
         X_DISTANCE_DRIVE,
         Y_DISTANCE_DRIVE,
-        GYRO_TURN
+        GYRO_TURN,
+        TUNE_X_PID,
+        TUNE_Y_PID,
+        TUNE_TURN_PID
     }   //enum Test
 
     private enum State
@@ -109,18 +119,48 @@ public class TestCommon
 
             case X_DISTANCE_DRIVE:
                 pidDriveCommand = new CmdPidDrive(
-                        robot, robot.pidDrive, 0.0, driveDistance*12.0, 0.0, 0.0);
+                        robot, robot.pidDrive, 0.0, driveDistance*12.0, 0.0, 0.0,
+                        drivePower, false);
                 break;
 
             case Y_DISTANCE_DRIVE:
                 pidDriveCommand = new CmdPidDrive(
-                        robot, robot.pidDrive, 0.0, 0.0, driveDistance*12.0, 0.0);
+                        robot, robot.pidDrive, 0.0, 0.0, driveDistance*12.0, 0.0,
+                        drivePower, false);
                 break;
 
             case GYRO_TURN:
                 pidDriveCommand = new CmdPidDrive(
-                        robot, robot.pidDrive, 0.0, 0.0, 0.0, turnDegrees);
+                        robot, robot.pidDrive, 0.0, 0.0, 0.0, turnDegrees,
+                        drivePower, false);
                 break;
+
+            case TUNE_X_PID:
+                pidDriveCommand = new CmdPidDrive(
+                        robot, robot.pidDrive, 0.0, driveDistance*12.0, 0.0, 0.0,
+                        drivePower, true);
+                break;
+
+            case TUNE_Y_PID:
+                pidDriveCommand = new CmdPidDrive(
+                        robot, robot.pidDrive, 0.0, 0.0, driveDistance*12.0, 0.0,
+                        drivePower, true);
+                break;
+
+            case TUNE_TURN_PID:
+                pidDriveCommand = new CmdPidDrive(
+                        robot, robot.pidDrive, 0.0, 0.0, 0.0, turnDegrees,
+                        drivePower, true);
+                break;
+        }
+        //
+        // Only SENSORS_TEST needs TensorFlow, shut it down for all other tests.
+        //
+        if (test != Test.SENSORS_TEST && robot.tensorFlowVision != null)
+        {
+            robot.globalTracer.traceInfo("TestInit", "Shutting down TensorFlow.");
+            robot.tensorFlowVision.shutdown();
+            robot.tensorFlowVision = null;
         }
 
         sm.start(State.START);
@@ -177,9 +217,15 @@ public class TestCommon
             case X_DISTANCE_DRIVE:
             case Y_DISTANCE_DRIVE:
             case GYRO_TURN:
+            case TUNE_X_PID:
+            case TUNE_Y_PID:
+            case TUNE_TURN_PID:
                 robot.dashboard.displayPrintf(9, "xPos=%.1f,yPos=%.1f,heading=%.1f",
                         robot.driveBase.getXPosition(), robot.driveBase.getYPosition(), robot.driveBase.getHeading());
-                robot.encoderXPidCtrl.displayPidInfo(10);
+                if (robot.encoderXPidCtrl != null)
+                {
+                    robot.encoderXPidCtrl.displayPidInfo(10);
+                }
                 robot.encoderYPidCtrl.displayPidInfo(12);
                 robot.gyroPidCtrl.displayPidInfo(14);
 
@@ -207,6 +253,34 @@ public class TestCommon
                 "Turn degrees:", testMenu, robot, -360.0, 360.0, 5.0, 90.0,
                 " %.0f deg");
 
+        if (tuneKpMenu == null)
+        {
+            tuneKpMenu = new FtcValueMenu(
+                    "Kp:", testMenu, robot, 0.0, 1.0, 0.001,
+                    robot.tunePidCoeff.kP, " %f");
+        }
+
+        if (tuneKiMenu == null)
+        {
+            tuneKiMenu = new FtcValueMenu(
+                    "Ki:", testMenu, robot, 0.0, 1.0, 0.0001,
+                    robot.tunePidCoeff.kI, " %f");
+        }
+
+        if (tuneKdMenu == null)
+        {
+            tuneKdMenu = new FtcValueMenu(
+                    "Kd:", testMenu, robot, 0.0, 1.0, 0.0001,
+                    robot.tunePidCoeff.kD, " %f");
+        }
+
+        if (tuneKfMenu == null)
+        {
+            tuneKfMenu = new FtcValueMenu(
+                    "Kf:", testMenu, robot, 0.0, 1.0, 0.001,
+                    robot.tunePidCoeff.kF, " %f");
+        }
+
         //
         // Populate menus.
         //
@@ -217,8 +291,16 @@ public class TestCommon
         testMenu.addChoice("X Distance drive", Test.X_DISTANCE_DRIVE, false, driveDistanceMenu);
         testMenu.addChoice("Y Distance drive", Test.Y_DISTANCE_DRIVE, false, driveDistanceMenu);
         testMenu.addChoice("Degrees turn", Test.GYRO_TURN, false, turnDegreesMenu);
+        testMenu.addChoice("Tune X PID", Test.TUNE_X_PID, false, tuneKpMenu);
+        testMenu.addChoice("Tune Y PID", Test.TUNE_Y_PID, false, tuneKpMenu);
+        testMenu.addChoice("Tune Turn PID", Test.TUNE_TURN_PID, false, tuneKpMenu);
 
         driveTimeMenu.setChildMenu(drivePowerMenu);
+        driveDistanceMenu.setChildMenu(drivePowerMenu);
+        turnDegreesMenu.setChildMenu(drivePowerMenu);
+        tuneKpMenu.setChildMenu(tuneKiMenu);
+        tuneKiMenu.setChildMenu(tuneKdMenu);
+        tuneKdMenu.setChildMenu(tuneKfMenu);
 
         //
         // Traverse menus.
@@ -269,14 +351,6 @@ public class TestCommon
                         "Pixy-Gold: ", "x=%.1f,y=%.1f,angle=%.1f %s",
                         targetInfo.xDistance, targetInfo.yDistance, targetInfo.angle, targetInfo.rect);
             }
-
-//            targetInfo = robot.pixyVision.getTargetInfo(RobotInfo.PIXY_SILVER_MINERAL_SIGNATURE);
-//            if (targetInfo != null)
-//            {
-//                robot.dashboard.displayPrintf(12, LABEL_WIDTH,
-//                        "Pixy-Silver: ", "x=%.1f,y=%.1f,angle=%.1f %s",
-//                        targetInfo.xDistance, targetInfo.yDistance, targetInfo.angle, targetInfo.rect);
-//            }
         }
     }   //doSensorsTest
 
@@ -289,13 +363,26 @@ public class TestCommon
             {
                 VectorF translation = robot.vuforiaVision.getLocationTranslation(robotLocation);
                 Orientation orientation = robot.vuforiaVision.getLocationOrientation(robotLocation);
-                robot.dashboard.displayPrintf(13, "Translation: x=%6.2f,y=%6.2f,z=%6.2f",
+                robot.dashboard.displayPrintf(12, "Translation: x=%6.2f,y=%6.2f,z=%6.2f",
                         translation.get(0)/ TrcUtil.MM_PER_INCH,
                         translation.get(1)/TrcUtil.MM_PER_INCH,
                         translation.get(2)/TrcUtil.MM_PER_INCH);
-                robot.dashboard.displayPrintf(14, "Orientation: roll=%6.2f,pitch=%6.2f,heading=%6.2f",
+                robot.dashboard.displayPrintf(13, "Orientation: roll=%6.2f,pitch=%6.2f,heading=%6.2f",
                         orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
             }
+        }
+
+        if (robot.tensorFlowVision != null)
+        {
+            TensorFlowVision.TargetInfo targetInfo;
+
+            targetInfo = robot.tensorFlowVision.getTargetInfo(
+                    TensorFlowVision.LABEL_GOLD_MINERAL, TensorFlowVision.NUM_EXPECTED_TARGETS);
+            robot.dashboard.displayPrintf(14, "Gold: %s", targetInfo);
+
+            targetInfo = robot.tensorFlowVision.getTargetInfo(
+                    TensorFlowVision.LABEL_SILVER_MINERAL, TensorFlowVision.NUM_EXPECTED_TARGETS);
+            robot.dashboard.displayPrintf(15, "Silver: %s", targetInfo);
         }
     }   //doVisionTest
 

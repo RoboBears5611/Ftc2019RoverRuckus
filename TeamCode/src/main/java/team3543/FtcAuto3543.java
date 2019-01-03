@@ -29,7 +29,7 @@ import common.CmdPidDrive;
 import common.CmdTimedDrive;
 import trclib.TrcRobot;
 
-@Autonomous(name="Autonomous3543", group="Auto")
+@Autonomous(name="Autonomous3543", group="FtcAuto")
 public class FtcAuto3543 extends AutoCommon
 {
     private static final String moduleName = "FtcAuto3543";
@@ -45,7 +45,7 @@ public class FtcAuto3543 extends AutoCommon
         //
         // Initializing robot objects.
         //
-        robot = new Robot3543(TrcRobot.RunMode.AUTO_MODE);
+        robot = new Robot3543(TrcRobot.getRunMode());
         super.setRobot(robot);
         //
         // Choice menus.
@@ -55,7 +55,7 @@ public class FtcAuto3543 extends AutoCommon
         if (USE_TRACELOG)
         {
             String filePrefix = String.format("%s%02d", matchType, matchNumber);
-            robot.tracer.openTraceLog("/sdcard/FIRST/tracelog", filePrefix);
+            robot.globalTracer.openTraceLog("/sdcard/FIRST/tracelog", filePrefix);
         }
 
         //
