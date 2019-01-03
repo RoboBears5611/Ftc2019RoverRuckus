@@ -79,8 +79,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
     FtcDcMotor Extendor;
 
     FtcDcMotor RoboLift;
-    CRServo LCollectorServo;
-    CRServo RCollectorServo;
+//    FtcDcMotor Collector;
 
     public Robot5611(TrcRobot.RunMode runMode)
     {
@@ -151,11 +150,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
 
         RoboLift = new FtcDcMotor(RobotInfo.RoboLiftMotorName);
-
-        LCollectorServo = opMode.hardwareMap.crservo.get(RobotInfo.LeftCollectorServoName);
-        RCollectorServo = opMode.hardwareMap.crservo.get(RobotInfo.RightCollectorServoName);
-        RCollectorServo.setDirection(DcMotorSimple.Direction.REVERSE);
-
+//        Collector = new FtcDcMotor(RobotInfo.CollectorMotorName);
     }   //Robot5611
 
     void startMode(TrcRobot.RunMode runMode)
@@ -186,8 +181,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         ExtendoRotator.set(rotate);
     }
     public void collector(double collector) {
-        RCollectorServo.setPower(collector);
-        LCollectorServo.setPower(collector);
+//        Collector.set(collector);
     }
 
     void traceStateInfo(double elapsedTime, String stateName, double xDistance, double yDistance, double heading)

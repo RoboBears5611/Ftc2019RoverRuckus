@@ -31,14 +31,14 @@ public class DefaultControls extends Controls {
 
     @Override
     public double armExtend() {
-        return (driverGamepad.getButtons()>>12)&1 //adds 1 when active, 0 when not (DPAD_UP)
+        return ((driverGamepad.getButtons()>>12)&1) //adds 1 when active, 0 when not (DPAD_UP)
                 -(driverGamepad.getButtons()>>13)&1; //subtracts 1 when activated, 0 when not (DPAD_DOWN)
 
     }
 
     @Override
     public double armRotate() {
-        return (driverGamepad.getButtons()>>11)&1 //adds 1 when active, 0 when not (DPAD_RIGHT)
+        return ((driverGamepad.getButtons()>>11)&1) //adds 1 when active, 0 when not (DPAD_RIGHT)
                 -(driverGamepad.getButtons()>>10)&1; //subtracts 1 when activated, 0 when not (DPAD_LEFT)
     }
 

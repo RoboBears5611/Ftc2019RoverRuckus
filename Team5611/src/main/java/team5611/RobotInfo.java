@@ -56,8 +56,7 @@ class RobotInfo
     static final String ExtendoRotatorMotorName = "ExtendoRotatorMotor";
     static final String ExtendorMotorName = "ExtendorMotor";
     static final String RoboLiftMotorName = "RoboLiftMotor";
-    static final String LeftCollectorServoName  = "LCollectorServo";
-    static final String RightCollectorServoName = "RCollectorServo";
+    static final String CollectorMotorName = "CollectorMotor";
 //    static final String RightBackMotorName = "RBMotor";
 //    static final String LeftBackMotorName = "LBMotor";
 
