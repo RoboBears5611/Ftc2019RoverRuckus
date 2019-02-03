@@ -30,6 +30,7 @@ class RobotInfo
     // DriveBase subsystem.
     //
     static final DcMotor.RunMode DRIVE_MOTOR_MODE       = DcMotor.RunMode.RUN_WITHOUT_ENCODER;
+    static final DcMotor.RunMode AUTONOMOUS_DRIVE_MOTOR_MODE = DcMotor.RunMode.RUN_USING_ENCODER;
     static final double TURN_POWER_LIMIT                = 0.5;
 
     static final double ENCODER_X_KP                    = 0.15;

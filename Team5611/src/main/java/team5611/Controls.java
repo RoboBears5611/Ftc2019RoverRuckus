@@ -7,6 +7,8 @@ import ftclib.FtcGamepad;
  */
 
 public abstract class Controls {
+    public abstract double roboLift();
+
     public enum DriveType{
         Tank, Arcade
     }

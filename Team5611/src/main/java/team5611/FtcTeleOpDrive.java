@@ -28,15 +28,19 @@ import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import java.util.Date;
+
 import ftclib.FtcGamepad;
 import ftclib.FtcOpMode;
 import hallib.HalDashboard;
+import trclib.TrcGameController;
 import trclib.TrcRobot;
 
+import static java.lang.System.currentTimeMillis;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 
 @TeleOp(name="Robot Full", group="TeleOp")
-public class FtcTeleOpDrive extends FtcOpMode
+public class FtcTeleOpDrive extends FtcOpMode implements TrcGameController.ButtonHandler
 {
     protected HalDashboard dashboard;
     protected Robot5611 robot;
@@ -71,24 +75,21 @@ public class FtcTeleOpDrive extends FtcOpMode
         controls = new DefaultControls(driverGamepad,operatorGamepad);
     }   //initRobot
 
-    //
-    // Overrides TrcRobot.RobotMode methods.
-    //
-
-    @Override
     public void startMode(TrcRobot.RunMode runMode)
     {
         dashboard.clearDisplay();
         robot.startMode(runMode);
     }   //startMode
 
-    @Override
     public void stopMode(TrcRobot.RunMode runMode)
     {
         robot.stopMode(runMode);
         printPerformanceMetrics(robot.tracer);
     }   //stopMode
 
+//    boolean bursting; //Bursting was lowered down the priority scale for now.
+//    double lastBurstTime;
+    double lastCollectorPower;
     @Override
     public void runPeriodic(double elapsedTime) {
         OpenGLMatrix location = this.robot.vuforiaVision.getRobotLocation();
@@ -99,7 +100,7 @@ public class FtcTeleOpDrive extends FtcOpMode
             robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         }   //runPeriodic
         Controls.DriveArguments arguments = controls.getDrive();
-        drivePowerScale = controls.turboMode()?1:0.5;
+        drivePowerScale = controls.turboMode()?1:0.75;
         switch(arguments.driveType){
             case Tank:
                 robot.tankDrive(arguments.leftOrY * drivePowerScale, arguments.rightOrTurn * drivePowerScale);
@@ -110,7 +111,25 @@ public class FtcTeleOpDrive extends FtcOpMode
             default:
                 throw new UnsupportedOperationException("Drive Type "+arguments.driveType.toString()+" not supported");
         }
-        robot.extendoArm(controls.armExtend(), controls.armRotate());
-        robot.collector(controls.collector());
+
+//        double collector = controls.collector();
+//        if(collector>=0||collector<-0.5){
+//            collector = Math.pow(collector,2);
+//        }else if(lastCollectorPower>=0){
+//            bursting = true;
+//        }
+//
+//        if(bursting){
+//
+//        }
+        robot.collector(Math.pow(controls.collector(), 3));
+        robot.extendoArm(controls.armExtend(), controls.armRotate()/3);
+        robot.roboLift(controls.roboLift());
+        lastCollectorPower=currentTimeMillis();
+    }
+
+    @Override
+    public void buttonEvent(TrcGameController gameCtrl, int button, boolean pressed) {
+        //Nothing thus far.
     }
 }   //class FtcTeleOpDrive

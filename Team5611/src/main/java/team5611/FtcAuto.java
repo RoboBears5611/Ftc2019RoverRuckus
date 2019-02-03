@@ -57,7 +57,7 @@ public class FtcAuto extends FtcOpMode
 //        DISTANCE_DRIVE,
 //        TIMED_DRIVE,
         TURN,
-        DO_NOTHING
+        FULL_AUTO, DO_NOTHING
     }   //enum Strategy
 
     private static final String moduleName = "FtcAuto";
@@ -101,10 +101,10 @@ public class FtcAuto extends FtcOpMode
         //
         switch (strategy)
         {
-//            case FULL_AUTO:
-//                autoCommand = new CmdAutoFull(robot, alliance, delay);
-//                break;
-//
+            case FULL_AUTO:
+                autoCommand = new CmdAutoFull(robot, delay);
+                break;
+
 //            case DISTANCE_DRIVE:
 //                autoCommand = new CmdPidDrive(
 //                        robot, robot.pidDrive, delay, 0.0, driveDistance*12.0, 0.0);
@@ -121,26 +121,21 @@ public class FtcAuto extends FtcOpMode
                 autoCommand = null;
                 break;
         }
+        robot.dashboard.displayText(7,"IT'S WAITING");
     }   //initRobot
 
-    //
-    // Overrides TrcRobot.RobotMode methods.
-    //
-
-    @Override
     public void startMode(TrcRobot.RunMode runMode)
     {
         robot.tracer.traceInfo(moduleName, "%s: ***** Starting autonomous *****", new Date());
         robot.startMode(TrcRobot.RunMode.AUTO_MODE);
-        robot.battery.setTaskEnabled(true);
+        robot.battery.setEnabled(true);
         robot.dashboard.clearDisplay();
     }   //startMode
 
-    @Override
     public void stopMode(TrcRobot.RunMode runMode)
     {
         robot.stopMode(TrcRobot.RunMode.AUTO_MODE);
-        robot.battery.setTaskEnabled(false);
+        robot.battery.setEnabled(false);
         printPerformanceMetrics(robot.tracer);
 
         if (USE_TRACELOG)
@@ -155,7 +150,10 @@ public class FtcAuto extends FtcOpMode
         if (autoCommand != null)
         {
             autoCommand.cmdPeriodic(elapsedTime);
+            robot.dashboard.displayText(6,"Running Auto Command");
+
         }
+        robot.dashboard.displayText(5,"Running Command");
     }   //runContinuous
 
     private void doMenus()
@@ -199,8 +197,9 @@ public class FtcAuto extends FtcOpMode
 //        strategyMenu.addChoice("Full Auto", Strategy.FULL_AUTO, true);
 //        strategyMenu.addChoice("Distance Drive", Strategy.DISTANCE_DRIVE, false, driveDistanceMenu);
 //        strategyMenu.addChoice("Timed Drive", Strategy.TIMED_DRIVE, false, driveTimeMenu);
+        strategyMenu.addChoice("Full Autonomous",Strategy.FULL_AUTO,true);
         strategyMenu.addChoice("Turn", Strategy.TURN, false,turnDegreesMenu);
-        strategyMenu.addChoice("Do nothing", Strategy.DO_NOTHING, true);
+        strategyMenu.addChoice("Do nothing", Strategy.DO_NOTHING, false);
 
         //
         // Traverse menus.

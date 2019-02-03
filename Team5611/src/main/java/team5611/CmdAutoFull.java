@@ -23,6 +23,7 @@
 package team5611;
 
 import trclib.TrcEvent;
+import trclib.TrcPidController;
 import trclib.TrcPidMotor;
 import trclib.TrcRobot;
 import trclib.TrcStateMachine;
@@ -34,7 +35,7 @@ class CmdAutoFull implements TrcRobot.RobotCommand
     {
         DO_DELAY,
         LOWER_FROM_LANDER,
-        DETACH_FROM_LANDER,
+        DRIVE_FROM_LANDER,
         TURN_TOWARDS_VUFORIA,
         READ_VUFORIA_TARGET_FOR_SAMPLES,
         DRIVE_TO_SAMPLE_FIELD,
@@ -44,7 +45,7 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         READ_VURFORIA_TARGET_FOR_FLAG,
         DRIVE_TO_DROP_ZONE,
         DEPOSIT_FLAG,
-        DONE
+        START_LOWER_FROM_LANDER, DONE
     }   //enum State
 
     private static final String moduleName = "CmdTimedDrive";
@@ -91,24 +92,31 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                     //
                     if (delay == 0.0)
                     {
-                        sm.setState(State.DONE);
+                        sm.setState(State.START_LOWER_FROM_LANDER); //NOTE:  MUST CHANGE BACK
                     }
                     else
                     {
                         timer.set(delay, event);
-                        sm.waitForSingleEvent(event, State.LOWER_FROM_LANDER);
+                        sm.waitForSingleEvent(event, State.START_LOWER_FROM_LANDER);
                     }
+                    break;
+                case START_LOWER_FROM_LANDER:
+                    robot.roboLift(1);
+                    robot.roboLiftTicks(5400);
+                    sm.setState(State.LOWER_FROM_LANDER);
+
                     break;
                 case LOWER_FROM_LANDER:
-                    robot.RoboLift.motor.setTargetPosition(-200);
-                    if(robot.RoboLift.motor.isBusy()){
-                        sm.setState(State.DETACH_FROM_LANDER);
+                    if(robot.roboLiftOnTarget()){
+                        robot.roboLift(0);
+                        sm.setState(State.DRIVE_FROM_LANDER);
                     }
                     break;
-                case DETACH_FROM_LANDER:
-                    robot.arcadeDrive(0.2,0);
-                    timer.set(1,event);
-                    sm.waitForSingleEvent(event,State.DETACH_FROM_LANDER);
+                case DRIVE_FROM_LANDER:
+//                    robot.arcadeDrive(-0.25,0);
+                    robot.driveBase.arcadeDrive(-0.35,0);
+                    timer.set(0.5,event);
+                    sm.waitForSingleEvent(event,State.DONE);
                     break;
                 case TURN_TOWARDS_VUFORIA:
                     robot.leftWheel.motor.setTargetPosition(200);
@@ -126,7 +134,20 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                     sm.stop();
                     break;
             }
-            robot.traceStateInfo(elapsedTime, state.toString(), 0.0, 0.0, 0.0);
+            robot.traceStateInfo(elapsedTime, state.toString(), robot.driveBase.getXPosition(), robot.driveBase.getYPosition(), robot.driveBase.getHeading());
+
+            if (robot.pidDrive.isActive())
+            {
+                robot.tracer.traceInfo("Battery", "Voltage=%5.2fV (%5.2fV)",
+                        robot.battery.getVoltage(), robot.battery.getLowestVoltage());
+                robot.tracer.traceInfo("Raw Encoder",
+                        "l=%.0f, r=%.0f",
+                        robot.leftWheel.getPosition(),
+                        robot.rightWheel.getPosition());
+
+                robot.encoderYPidCtrl.printPidInfo(robot.tracer, elapsedTime);
+                robot.gyroPidCtrl.printPidInfo(robot.tracer, elapsedTime);
+            }
         }
 
         return done;

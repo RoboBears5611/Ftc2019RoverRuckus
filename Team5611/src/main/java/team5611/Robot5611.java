@@ -25,6 +25,7 @@ package team5611;
 import android.widget.TextView;
 
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
@@ -78,9 +79,10 @@ public class Robot5611 implements FtcMenu.MenuButtons
     FtcDcMotor ExtendoRotator;
     FtcDcMotor Extendor;
 
-    FtcDcMotor RoboLift;
-//    FtcDcMotor Collector;
+    DcMotor RoboLift;
+    FtcDcMotor Collector;
 
+    TrcRobot.RunMode RunMode;
     public Robot5611(TrcRobot.RunMode runMode)
     {
         //
@@ -92,6 +94,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         tracer = FtcOpMode.getGlobalTracer();
         dashboard.setTextView(
                 (TextView)((FtcRobotControllerActivity)opMode.hardwareMap.appContext).findViewById(R.id.textOpMode));
+        RunMode=runMode;
         if(opMode.hardwareMap.voltageSensor.entrySet().isEmpty()){
             dashboard.displayPrintf(0,"No Battery Sensor Found");
         }else{
@@ -114,8 +117,27 @@ public class Robot5611 implements FtcMenu.MenuButtons
         leftWheel = new FtcDcMotor(RobotInfo.LeftMotorName);
         rightWheel = new FtcDcMotor(RobotInfo.RightMotorName);
 
-        leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-        rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+
+        RoboLift = opMode.hardwareMap.dcMotor.get(RobotInfo.RoboLiftMotorName);
+        switch(runMode){
+            case AUTO_MODE:
+                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+                break;
+            case DISABLED_MODE:
+            case TELEOP_MODE:
+            case TEST_MODE:
+                RoboLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid runMode");
+        }
 
         leftWheel.setInverted(false);
         rightWheel.setInverted(true);
@@ -149,8 +171,8 @@ public class Robot5611 implements FtcMenu.MenuButtons
         ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
 
-        RoboLift = new FtcDcMotor(RobotInfo.RoboLiftMotorName);
-//        Collector = new FtcDcMotor(RobotInfo.CollectorMotorName);
+
+        Collector = new FtcDcMotor(RobotInfo.CollectorMotorName);
     }   //Robot5611
 
     void startMode(TrcRobot.RunMode runMode)
@@ -171,6 +193,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
     }   //stopMode
 
     void tankDrive(double left, double right){
+        dashboard.displayPrintf(10,"Left:  %5.2f Right:  %5.2f",left, right);
         driveBase.tankDrive(left, right);
     }
     void arcadeDrive(double y, double turn) {
@@ -181,7 +204,31 @@ public class Robot5611 implements FtcMenu.MenuButtons
         ExtendoRotator.set(rotate);
     }
     public void collector(double collector) {
-//        Collector.set(collector);
+        Collector.set(collector);
+    }
+
+    double rotations;
+    public void roboLiftInches(double inches) {
+
+        rotations = inches;
+        rotations *= 51.0/5.0; //51 teeth per 5 inches of rack
+        rotations *= 1.0/25.0; //1 rotation per 25 teeth of pinion gear
+        rotations *= 3.0; //3 rotations of motor per 1 rotation of pinion gear;
+        rotations *= 1120.0; //280 encoder ticks per motor rotation
+        roboLiftTicks((int)rotations);
+    }
+    public void roboLiftTicks(int ticks){
+        int currentPosition = RoboLift.getTargetPosition();
+        RoboLift.setTargetPosition(currentPosition+ticks);
+        tracer.tracePrintf("EncoderTicks:  "+ticks);
+    }
+    public boolean roboLiftOnTarget() {
+        dashboard.displayText(8,"TargetPos:  "+String.valueOf(RoboLift.getTargetPosition()));
+        dashboard.displayText(9,"CurrentPos:  "+String.valueOf(RoboLift.getCurrentPosition()));
+        return Math.abs(RoboLift.getTargetPosition()-RoboLift.getCurrentPosition())<5;
+    }
+    public void roboLift(double power){
+        RoboLift.setPower(power);
     }
 
     void traceStateInfo(double elapsedTime, String stateName, double xDistance, double yDistance, double heading)
@@ -212,6 +259,16 @@ public class Robot5611 implements FtcMenu.MenuButtons
     }   //isMenuDownButton
 
     @Override
+    public boolean isMenuAltUpButton() {
+        return false;
+    }
+
+    @Override
+    public boolean isMenuAltDownButton() {
+        return false;
+    }
+
+    @Override
     public boolean isMenuEnterButton()
     {
         return opMode.gamepad1.a;
@@ -222,6 +279,4 @@ public class Robot5611 implements FtcMenu.MenuButtons
     {
         return opMode.gamepad1.dpad_left;
     }   //isMenuBackButton
-
-
 }   //class Robot5611

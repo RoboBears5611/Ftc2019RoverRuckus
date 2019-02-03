@@ -19,41 +19,46 @@ public class DefaultControls extends Controls {
     }
 
     @Override
-    double getLeftOrY(){
-        return driverGamepad.getLeftStickY();
-
-    }
+    double getLeftOrY(){ return driverGamepad.getLeftStickY(); }
 
     @Override
-    double getRightOrTurn() {
-        return driverGamepad.getRightStickY();
-    }
+    double getRightOrTurn() { return driverGamepad.getRightStickY(); }
 
     @Override
     public double armExtend() {
-        return ((driverGamepad.getButtons()>>12)&1) //adds 1 when active, 0 when not (DPAD_UP)
-                -(driverGamepad.getButtons()>>13)&1; //subtracts 1 when activated, 0 when not (DPAD_DOWN)
+        return ((driverGamepad.getButtons()>>11)&1) //adds 1 when active, 0 when not (RBumper)
+                -((driverGamepad.getButtons()>>10)&1); //subtracts 1 when activated, 0 when not (LBumper)
 
     }
 
     @Override
     public double armRotate() {
-        return ((driverGamepad.getButtons()>>11)&1) //adds 1 when active, 0 when not (DPAD_RIGHT)
-                -(driverGamepad.getButtons()>>10)&1; //subtracts 1 when activated, 0 when not (DPAD_LEFT)
+        return ((driverGamepad.getButtons()>>12)&1) //adds 1 when active, 0 when not (DPAD_RIGHT)
+                -((driverGamepad.getButtons()>>13)&1); //subtracts 1 when activated, 0 when not (DPAD_LEFT)
     }
 
     @Override
     public boolean turboMode(){
-        return ((driverGamepad.getButtons()>>7)&1)==1;
+        return ((driverGamepad.getButtons()>>1)&1)==1; //Gamepad A
     }
 
-    boolean collectorOn;
-    boolean gamepadALast;
+//    boolean collectorOn;
+//    boolean gamepadALast;
+//    @Override
+//    public double collector() {
+//        if(driverGamepad.getButton(FtcGamepad.GAMEPAD_A)||!gamepadALast){
+//            collectorOn = !collectorOn;
+//        }
+//        return collectorOn?1:0;
+//    }
     @Override
-    public double collector() {
-        if(driverGamepad.getButton(FtcGamepad.GAMEPAD_A)||!gamepadALast){
-            collectorOn = !collectorOn;
-        }
-        return collectorOn?1:0;
+    public double collector(){
+        return driverGamepad.getLeftTrigger()
+                -driverGamepad.getRightTrigger();
+    }
+    public double roboLift(){
+        int buttons = driverGamepad.getButtons();
+        return ((buttons>>3)&1) //X (positive)
+            -((buttons>>2)&1); //Y (negative)
     }
 }
