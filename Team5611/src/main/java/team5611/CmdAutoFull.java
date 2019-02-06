@@ -37,7 +37,7 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         LOWER_FROM_LANDER,
         DRIVE_FROM_LANDER,
         TURN_TOWARDS_VUFORIA,
-        READ_VUFORIA_TARGET_FOR_SAMPLES,
+        READ_VUFORIA_TARGET_FOR_SAMPLES, //These states were never used
         DRIVE_TO_SAMPLE_FIELD,
         FIND_GOLD_SAMPLE,
         SHOVE_GOLD_SAMPLE,
@@ -56,11 +56,11 @@ class CmdAutoFull implements TrcRobot.RobotCommand
     private TrcTimer timer;
     private TrcStateMachine<State> sm;
 
-    CmdAutoFull(Robot5611 robot, double delay)
+    CmdAutoFull(Robot5611 robot, double delay) //This accepts the robot instance (which was created for us by FtcAuto) and the delay selected in the menus
     {
         this.robot = robot;
         this.delay = delay;
-        event = new TrcEvent(moduleName);
+        event = new TrcEvent(moduleName); //'event' becomes a generic signaling device that can be reused between different states.
         timer = new TrcTimer(moduleName);
         sm = new TrcStateMachine<>(moduleName);
         sm.start(State.DO_DELAY);
@@ -78,67 +78,66 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         // Print debug info.
         //
         State state = sm.getState();
-        robot.dashboard.displayPrintf(1, "State: %s", state != null? state.toString(): "Disabled");
+        robot.dashboard.displayPrintf(1, "State: %s", state != null? state.toString(): "Disabled"); //This function is explain in Robot5611
 
-        if (sm.isReady())
+        if (sm.isReady()) //This will be "no" if the state machine is disabled, or if it's waiting for an event.
         {
-            state = sm.getState();
+            state = sm.getState(); //Gets the current state.  We can change the state to whatever state we want from any other state.
 
             switch (state)
             {
                 case DO_DELAY:
-                    //
-                    // Do delay if any.
-                    //
+                    State nextState = State.START_LOWER_FROM_LANDER; //Define the next state once so you don't have to change it twice when you want it changed.
                     if (delay == 0.0)
                     {
-                        sm.setState(State.START_LOWER_FROM_LANDER); //NOTE:  MUST CHANGE BACK
+                        sm.setState(nextState); //NOTE:  MUST CHANGE BACK
                     }
                     else
                     {
                         timer.set(delay, event);
-                        sm.waitForSingleEvent(event, State.START_LOWER_FROM_LANDER);
+                        sm.waitForSingleEvent(event, nextState);
                     }
                     break;
-                case START_LOWER_FROM_LANDER:
-                    robot.roboLift(1);
+                case START_LOWER_FROM_LANDER: //STEP ONE:  START LOWERING THE LIFT
+                    robot.roboLift(1); //You have to set the power to what you want it to move at, otherwise it won't move at all.
                     robot.roboLiftTicks(5400);
-                    sm.setState(State.LOWER_FROM_LANDER);
+                    sm.setState(State.LOWER_FROM_LANDER); //Immediately set the next state to step two.  This step will not happen until the hardware has gone
+                    // through a complete update cycle. (i.e., this function has completed and started again)
 
                     break;
-                case LOWER_FROM_LANDER:
-                    if(robot.roboLiftOnTarget()){
-                        robot.roboLift(0);
-                        sm.setState(State.DRIVE_FROM_LANDER);
+                case LOWER_FROM_LANDER: //STEP TWO:  WAIT UNTIL THE ROBOT IS DONE LOWERING
+                    if(robot.roboLiftOnTarget()){ //if the robot is done dropping
+                        robot.roboLift(0); //stop the motor so it doesn't burn itself out
+                        sm.setState(State.DRIVE_FROM_LANDER); //move on!
                     }
                     break;
-                case DRIVE_FROM_LANDER:
+                case DRIVE_FROM_LANDER: //STEP THREE:  DRIVE A VERY SHORT WAYS
 //                    robot.arcadeDrive(-0.25,0);
-                    robot.driveBase.arcadeDrive(-0.35,0);
-                    timer.set(0.5,event);
-                    sm.waitForSingleEvent(event,State.DONE);
+                    robot.driveBase.arcadeDrive(-0.35,0); //'arcade drive" uses power and turn (between -1 and 1) to drive ('tank drive' uses left and right wheel powers)
+                    timer.set(0.5,event); //Fire this event after half a second)
+                    sm.waitForSingleEvent(event,State.DONE); //When this event fires, move on to "Done"
                     break;
-                case TURN_TOWARDS_VUFORIA:
-                    robot.leftWheel.motor.setTargetPosition(200);
-                    if(!robot.leftWheel.motor.isBusy()){
-                        sm.setState(State.DONE);
-                    }
-                    break;
-                case DONE:
+//                case TURN_TOWARDS_VUFORIA: //UNUSED
+//                    robot.leftWheel.motor.setTargetPosition(200);
+//                    if(!robot.leftWheel.motor.isBusy()){
+//                        sm.setState(State.DONE);
+//                    }
+//                    break;
+                case DONE: //STEP FOUR:  DO NOTHING
                 default:
                     //
                     // We are done.
                     //
-                    robot.driveBase.arcadeDrive(0,0);
+                    robot.driveBase.arcadeDrive(0,0); //stop driving
                     done = true;
-                    sm.stop();
+                    sm.stop(); //tell the state machine we're done.
                     break;
             }
-            robot.traceStateInfo(elapsedTime, state.toString(), robot.driveBase.getXPosition(), robot.driveBase.getYPosition(), robot.driveBase.getHeading());
+            robot.traceStateInfo(elapsedTime, state.toString(), robot.driveBase.getXPosition(), robot.driveBase.getYPosition(), robot.driveBase.getHeading()); //Spit some location and state info to the debug logs
 
             if (robot.pidDrive.isActive())
             {
-                robot.tracer.traceInfo("Battery", "Voltage=%5.2fV (%5.2fV)",
+                robot.tracer.traceInfo("Battery", "Voltage=%5.2fV (%5.2fV)", //Spit more info to the logs
                         robot.battery.getVoltage(), robot.battery.getLowestVoltage());
                 robot.tracer.traceInfo("Raw Encoder",
                         "l=%.0f, r=%.0f",

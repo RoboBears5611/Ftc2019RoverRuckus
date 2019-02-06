@@ -698,6 +698,7 @@ public class TrcPidDrive
             {
                 msgTracer.traceInfo(funcName, "%s: Stalled=%s, Expired=%s", instanceName, stalled, expired);
             }
+
         }
 
         if (maintainHeading && driveBase.supportsHolonomicDrive())

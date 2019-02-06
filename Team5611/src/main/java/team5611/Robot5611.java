@@ -58,32 +58,32 @@ public class Robot5611 implements FtcMenu.MenuButtons
     //
     // Global objects.
     //
-    FtcOpMode opMode;
-    HalDashboard dashboard;
-    TrcDbgTrace tracer;
-    FtcRobotBattery battery = null;
-    VuforiaVision vuforiaVision = null;
-    FtcAndroidTone androidTone;
+    FtcOpMode opMode; //Reference to the basic OpMode stuff (like telemetry and the hardware map, which let us talk to the phones and access motors and stuff)
+    HalDashboard dashboard; //turns the telemetry into a nice line-by-line place to spit out info.
+    TrcDbgTrace tracer; //Fancy utility to spit stuff out to the logs.  You can see these logs through "logcat" when you're connected remotely (see README.txt)
+    FtcRobotBattery battery = null; //Battery levels
+    VuforiaVision vuforiaVision = null; //Don't use
+    FtcAndroidTone androidTone; //Makes beeping sounds to tell you when bad stuff is happening.
 
 
     FtcDcMotor leftWheel = null;
     FtcDcMotor rightWheel = null;
-    TrcSimpleDriveBase driveBase = null;
+    TrcSimpleDriveBase driveBase = null; //Mixes left and right wheels together, with a couple extra utilities (like 'arcadeDrive',  which does math so you can drive by specifying forward power and turn, both with values between -1 and 1)
 
-    TrcPidController encoderYPidCtrl = null;
+    TrcPidController encoderYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
     TrcPidController gyroPidCtrl = null;
-    TrcPidDrive pidDrive = null;
+    TrcPidDrive pidDrive = null; //Proportional-Integral-Derivative.  Everyone's favorite control feedback loop, now for drive trains. (don't use)
 
 
     //Peripherals (extendoArm)
-    FtcDcMotor ExtendoRotator;
-    FtcDcMotor Extendor;
+    FtcDcMotor ExtendoRotator; //Rotates the entire collection arm back and forth
+    FtcDcMotor Extendor; //Extends the collection arm
 
-    DcMotor RoboLift;
-    FtcDcMotor Collector;
+    DcMotor RoboLift; //Lifts the robot (like when dropping down for autonomous)
+    FtcDcMotor Collector; //Powers collection flapper thing
 
     TrcRobot.RunMode RunMode;
-    public Robot5611(TrcRobot.RunMode runMode)
+    public Robot5611(TrcRobot.RunMode runMode) //Autonomous or TeleOp - since this basic robot logic can be used in programs for both modes, you need to specify which here
     {
         //
         // Initialize global objects.
@@ -102,7 +102,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }
         androidTone = new FtcAndroidTone("AndroidTone");
 
-        if (USE_VUFORIA)
+        if (USE_VUFORIA) //We don't USE VUFORIA
         {
             dashboard.displayPrintf(1,"Initializing Vuforia");
             int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
@@ -113,15 +113,21 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }
 
         dashboard.displayPrintf(2,"Loading up Peripherals.");
+        //displayPrintf = print to a particular line in the display according to this format.  Values passed after the format are automatically interpolated
+        //%s = insert string here.
+        //%5.2f = insert decimal here with 5 digits before decimal point and 2 after (12345.12)
 
-        leftWheel = new FtcDcMotor(RobotInfo.LeftMotorName);
+        leftWheel = new FtcDcMotor(RobotInfo.LeftMotorName); //Drive motors
         rightWheel = new FtcDcMotor(RobotInfo.RightMotorName);
 
 
         RoboLift = opMode.hardwareMap.dcMotor.get(RobotInfo.RoboLiftMotorName);
+        //We don't use the TRC wrapper motor library here like we do with the drive motors
+        // the TRC go-to-position stuff wasn't working, so I cut past it and we use the default library stuff.
+
         switch(runMode){
             case AUTO_MODE:
-                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //Reset the motor to 0 before telling them to run to posiitons (otherwise it might go to 5094 right away if that's what it was supposed to go to before it was turned off before)
                 RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -139,16 +145,16 @@ public class Robot5611 implements FtcMenu.MenuButtons
                 throw new IllegalArgumentException("Invalid runMode");
         }
 
-        leftWheel.setInverted(false);
+        leftWheel.setInverted(false); //One wheel is inverted because it's backwards on the robot (picture the motors to prove this to yourself)
         rightWheel.setInverted(true);
 
         leftWheel.setBrakeModeEnabled(true);
         rightWheel.setBrakeModeEnabled(true);
 
         driveBase = new TrcSimpleDriveBase(leftWheel, rightWheel);
-        driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT);
+        driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT); //We don't have a mecanum base at all, so "X" is redundant
         //
-        // Initialize PID drive.
+        // Initialize PID drive. (we don't use it, I couldn't get it to work)
         //
         encoderYPidCtrl = new TrcPidController(
                 "encoderYPidCtrl",
@@ -207,16 +213,16 @@ public class Robot5611 implements FtcMenu.MenuButtons
         Collector.set(collector);
     }
 
-    double rotations;
-    public void roboLiftInches(double inches) {
-
-        rotations = inches;
-        rotations *= 51.0/5.0; //51 teeth per 5 inches of rack
-        rotations *= 1.0/25.0; //1 rotation per 25 teeth of pinion gear
-        rotations *= 3.0; //3 rotations of motor per 1 rotation of pinion gear;
-        rotations *= 1120.0; //280 encoder ticks per motor rotation
-        roboLiftTicks((int)rotations);
-    }
+//    double rotations;
+//    public void roboLiftInches(double inches) { //Does math to map from inches to ticks.  This math is wrong for some reason.
+//
+//        rotations = inches;
+//        rotations *= 51.0/5.0; //51 teeth per 5 inches of rack
+//        rotations *= 1.0/25.0; //1 rotation per 25 teeth of pinion gear
+//        rotations *= 3.0; //3 rotations of motor per 1 rotation of pinion gear;
+//        rotations *= 1120.0; //280 encoder ticks per motor rotation
+//        roboLiftTicks((int)rotations);
+//    }
     public void roboLiftTicks(int ticks){
         int currentPosition = RoboLift.getTargetPosition();
         RoboLift.setTargetPosition(currentPosition+ticks);
