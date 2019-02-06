@@ -42,10 +42,11 @@ The root of the operation is "FtcTeleOpDrive", for TeleOp,  and "FtcAuto" for au
 1.  Plug in the (turned-on) robot phone
 2.  Open a Command Line
 3.  Type "adb tcpip 5555"  (NOTE:  If you don't have 'adb' accessible from command line, you need to add it's containing folder to your PATH variable.  Look up how to do that)
+    a.  Extra NOTE:  If it says "daemon not running, starting daemon" (or something close) when you run the above statement, run it again, so it says "restarting on port 5555"
 4.  Connect via hotspot
     a.  Open the robot controller app on the phone
     b.  Go to "Program and Manage" from the hamburger menu
     c.  This will turn the hotspot on;  connect using the password on the page (you will not be able to use normal internet through this hotspot and you will get a little warning icon)
-5.  Type "adb connect 192.168.49.1:5555" on your command line
+5.  Type "adb connect 192.168.49.1" on your command line
 6.  You're connected, you can download like you would if you were plugged in (it just might be a little slower)
     a.  NOTE:  Don't use  "Instant run" to speed things up, though it will ask you to - in my experience, it just doesn't do anything, I don't know why.

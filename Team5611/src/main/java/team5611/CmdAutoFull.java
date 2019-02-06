@@ -36,7 +36,7 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         DO_DELAY,
         LOWER_FROM_LANDER,
         DRIVE_FROM_LANDER,
-        TURN_TOWARDS_VUFORIA,
+        CHUCK_TEAM_BALL,
         READ_VUFORIA_TARGET_FOR_SAMPLES, //These states were never used
         DRIVE_TO_SAMPLE_FIELD,
         FIND_GOLD_SAMPLE,
@@ -116,6 +116,11 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                     robot.driveBase.arcadeDrive(-0.35,0); //'arcade drive" uses power and turn (between -1 and 1) to drive ('tank drive' uses left and right wheel powers)
                     timer.set(0.5,event); //Fire this event after half a second)
                     sm.waitForSingleEvent(event,State.DONE); //When this event fires, move on to "Done"
+                    break;
+                case CHUCK_TEAM_BALL:
+                    robot.collector(1);
+                    timer.set(1,event);
+                    sm.waitForSingleEvent(event,State.DONE);
                     break;
 //                case TURN_TOWARDS_VUFORIA: //UNUSED
 //                    robot.leftWheel.motor.setTargetPosition(200);

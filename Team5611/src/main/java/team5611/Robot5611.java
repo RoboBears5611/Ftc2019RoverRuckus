@@ -210,6 +210,10 @@ public class Robot5611 implements FtcMenu.MenuButtons
         ExtendoRotator.set(rotate);
     }
     public void collector(double collector) {
+        //to slow it down on when spitting out we want to focus on positive values
+        if(collector>0){
+            collector/=2; //Halve the value
+        }
         Collector.set(collector);
     }
 
@@ -224,9 +228,10 @@ public class Robot5611 implements FtcMenu.MenuButtons
 //        roboLiftTicks((int)rotations);
 //    }
     public void roboLiftTicks(int ticks){
-        int currentPosition = RoboLift.getTargetPosition();
-        RoboLift.setTargetPosition(currentPosition+ticks);
-        tracer.tracePrintf("EncoderTicks:  "+ticks);
+        RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        RoboLift.setTargetPosition(ticks);
+        tracer.tracePrintf("EncoderTicks:  "+String.valueOf(ticks));
     }
     public boolean roboLiftOnTarget() {
         dashboard.displayText(8,"TargetPos:  "+String.valueOf(RoboLift.getTargetPosition()));
