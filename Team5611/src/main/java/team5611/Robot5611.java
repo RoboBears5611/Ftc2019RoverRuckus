@@ -55,6 +55,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
     static final boolean USE_VUFORIA = true;
 
     private static final String moduleName = "Robot5611";
+    public VuforiaNavigator vuforiaNavigator;
     //
     // Global objects.
     //
@@ -63,7 +64,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
     TrcDbgTrace tracer; //Fancy utility to spit stuff out to the logs.  You can see these logs through "logcat" when you're connected remotely (see README.txt)
     FtcRobotBattery battery = null; //Battery levels
     VuforiaVision vuforiaVision = null; //Don't use
-    FtcAndroidTone androidTone; //Makes beeping sounds to tell you when bad stuff is happening.
 
 
     FtcDcMotor leftWheel = null;
@@ -100,7 +100,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }else{
             battery = new FtcRobotBattery();
         }
-        androidTone = new FtcAndroidTone("AndroidTone");
 
         if (USE_VUFORIA) //We don't USE VUFORIA
         {
@@ -109,6 +108,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
             tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
             dashboard.displayPrintf(3,"CamId %s",cameraViewId);
             vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
+            vuforiaNavigator = new VuforiaNavigator("VuforiaNavigator",driveBase,vuforiaVision);
             dashboard.displayPrintf(1,"Initialized Vuforia");
         }
 
@@ -153,26 +153,8 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
         driveBase = new TrcSimpleDriveBase(leftWheel, rightWheel);
         driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT); //We don't have a mecanum base at all, so "X" is redundant
-        //
-        // Initialize PID drive. (we don't use it, I couldn't get it to work)
-        //
-        encoderYPidCtrl = new TrcPidController(
-                "encoderYPidCtrl",
-                new TrcPidController.PidCoefficients(
-                        RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD),
-                RobotInfo.ENCODER_Y_TOLERANCE, () -> driveBase.getYPosition());
-        gyroPidCtrl = new TrcPidController(
-                "gyroPidCtrl",
-                new TrcPidController.PidCoefficients(
-                        RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD),
-                RobotInfo.GYRO_TOLERANCE, () -> driveBase.getHeading());
-        gyroPidCtrl.setAbsoluteSetPoint(true);
-        gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
 
 
-        pidDrive = new TrcPidDrive("pidDrive", driveBase,null, encoderYPidCtrl, gyroPidCtrl);
-        pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
-        pidDrive.setBeep(androidTone);
 
         ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);

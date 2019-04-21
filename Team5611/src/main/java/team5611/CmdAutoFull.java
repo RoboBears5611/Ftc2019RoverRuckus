@@ -35,17 +35,16 @@ class CmdAutoFull implements TrcRobot.RobotCommand
     {
         DO_DELAY,
         LOWER_FROM_LANDER,
+        START_LOWER_FROM_LANDER,
         DRIVE_FROM_LANDER,
         CHUCK_TEAM_BALL,
-        READ_VUFORIA_TARGET_FOR_SAMPLES, //These states were never used
+//        READ_VUFORIA_TARGET, //These states were never used
         DRIVE_TO_SAMPLE_FIELD,
         FIND_GOLD_SAMPLE,
         SHOVE_GOLD_SAMPLE,
-        BACK_UP_FOR_FINDING_VUFORIA,
-        READ_VURFORIA_TARGET_FOR_FLAG,
         DRIVE_TO_DROP_ZONE,
         DEPOSIT_FLAG,
-        START_LOWER_FROM_LANDER, DONE
+        DONE,
     }   //enum State
 
     private static final String moduleName = "CmdTimedDrive";
@@ -119,8 +118,21 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                     break;
                 case CHUCK_TEAM_BALL:
                     robot.collector(1);
+                    event.clear();
                     timer.set(1,event);
                     sm.waitForSingleEvent(event,State.DONE);
+                    break;
+                case DRIVE_TO_SAMPLE_FIELD:
+                    event.clear();
+                    robot.vuforiaNavigator.setTarget(200,-200,100,event); //random numbers
+                    sm.waitForSingleEvent(event,State.SHOVE_GOLD_SAMPLE);  //For now, we just bulldoze through the sample field and see what happens.
+                    break;
+//                case FIND_GOLD_SAMPLE:  // So far unimplemented
+//                    break;
+                case SHOVE_GOLD_SAMPLE:
+                    event.clear();
+                    robot.vuforiaNavigator.setTarget(200,-300,100, event); //more random numbers
+                    sm.waitForSingleEvent(event,State.DRIVE_TO_DROP_ZONE);
                     break;
 //                case TURN_TOWARDS_VUFORIA: //UNUSED
 //                    robot.leftWheel.motor.setTargetPosition(200);
@@ -128,6 +140,11 @@ class CmdAutoFull implements TrcRobot.RobotCommand
 //                        sm.setState(State.DONE);
 //                    }
 //                    break;
+                case DRIVE_TO_DROP_ZONE:
+                    event.clear();
+                    robot.vuforiaNavigator.setTarget(200,-500,100, event); //more random numbers
+                    sm.waitForSingleEvent(event,State.DONE);
+                    break;
                 case DONE: //STEP FOUR:  DO NOTHING
                 default:
                     //

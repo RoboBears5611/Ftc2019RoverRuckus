@@ -132,7 +132,7 @@ public class VuforiaVision
          */
         OpenGLMatrix backSpaceLocationOnField = OpenGLMatrix
                 .translation(FTC_FIELD_WIDTH_MM, 0, TARGET_HEIGHT_MM)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90));
+                .multiplied(RobotInfo.VuforiaCameraRotation);
 
         FtcVuforia.TargetInfo[] imageTargetsInfo =
                 {
