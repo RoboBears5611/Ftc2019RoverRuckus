@@ -54,21 +54,23 @@ class RobotInfo
     static final double ENCODER_Y_KD                    = 0.0022;
     static final double ENCODER_Y_TOLERANCE             = 1.0;
     static final double ENCODER_Y_INCHES_PER_COUNT      = 68.0/4100.5;
-    static final double VUFORIA_NAV_Y_KP                    = 0.047;
-    static final double VUFORIA_NAV_Y_KI                    = 0.0;
-    static final double VUFORIA_NAV_Y_KD                    = 0.0052;
-    static final double VUFORIA_NAV_Y_TOLERANCE             = 5;
+//    static final double VUFORIA_NAV_Y_KP                    = 0.047;
+//    static final double VUFORIA_NAV_Y_KI                    = 0.0;
+//    static final double VUFORIA_NAV_Y_KD                    = 0.0052;
+//    static final double VUFORIA_NAV_Y_TOLERANCE             = 5;
 
 
-    static final double GYRO_KP                         = 0.018;
-    static final double GYRO_KI                         = 0.0;
-    static final double GYRO_KD                         = 0.002;
-    static final double GYRO_TOLERANCE                  = 1.0;
-    static final double VUFORIA_NAV_KP                         = 0.018;
+//    static final double GYRO_KP                         = 0.1;
+//    static final double GYRO_KI                         = 0.0;
+//    static final double GYRO_KD                         = 0.002;
+//    static final double GYRO_TOLERANCE                  = 1.0;
+    static final double VUFORIA_NAV_KP                         = 5;
     static final double VUFORIA_NAV_KI                         = 0.0;
-    static final double VUFORIA_NAV_KD                         = 0.002;
+    static final double VUFORIA_NAV_KD                         = 0.2;
+    static final double VUFORIA_NAV_TOLERANCE                  = 1.0;
 
-    static final double PIDDRIVE_STALL_TIMEOUT          = 0.25;     //in msec.
+
+    static final double PIDDRIVE_STALL_TIMEOUT          = 1;     //in sec.
 
     static final String RightMotorName = "RMotor";
     static final String LeftMotorName  = "LMotor";

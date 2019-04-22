@@ -1,13 +1,10 @@
 package team5611;
 
-import com.qualcomm.robotcore.robot.Robot;
-
-import org.firstinspires.ftc.robotcore.external.matrices.MatrixF;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import ftclib.FtcAndroidTone;
+import trclib.TrcDbgTrace;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
@@ -17,17 +14,13 @@ import trclib.TrcStateMachine;
 import trclib.TrcTaskMgr;
 import trclib.TrcUtil;
 
-import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-
 public class VuforiaNavigator {
     private TrcSimpleDriveBase driveBase;
-    private TrcPidDrive pidDrive;
+    public TrcPidDrive pidDrive;
     private VuforiaVision vuforiaVision;
 
-    TrcPidController encoderYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
-    TrcPidController gyroPidCtrl = null;
+    TrcPidController vuforiaYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
+    TrcPidController vuforiaTurnPidCtrl = null;
     FtcAndroidTone androidTone; //Makes beeping sounds to tell you when bad stuff is happening.
 
 
@@ -49,6 +42,16 @@ public class VuforiaNavigator {
 
     boolean SKIP_TO_DONE = false; //NOTE:  For testing only
 
+    TrcDbgTrace trace;
+
+    public void resetPID() {
+        pidDrive = new TrcPidDrive("pidDrive", driveBase,null, vuforiaYPidCtrl, vuforiaTurnPidCtrl);
+        pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
+        pidDrive.setBeep(androidTone);
+        trace.traceInfo("resetPID","VuforiaNavigator PID has been reset");
+    }
+
+
     enum NavState{
         TurnToTarget,
         DriveToTarget,
@@ -60,6 +63,8 @@ public class VuforiaNavigator {
         this.driveBase = driveBase;
         this.vuforiaVision = vuforiaVision;
 
+        trace = TrcDbgTrace.getGlobalTracer();
+
         navStateMachine = new TrcStateMachine<>(InstanceName+".navStateMachine");
         navStateMachine.setState(NavState.Done);
         event = new TrcEvent(InstanceName+".event");
@@ -67,23 +72,21 @@ public class VuforiaNavigator {
         //
         // Initialize PID drive.
         //
-        encoderYPidCtrl = new TrcPidController(
-                "encoderYPidCtrl",
+        vuforiaYPidCtrl = new TrcPidController(
+                "vuforiaYPidCtrl",
                 new TrcPidController.PidCoefficients(
                         RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD),
-                RobotInfo.ENCODER_Y_TOLERANCE, this::driveYPidDistance);
-        gyroPidCtrl = new TrcPidController(
-                "gyroPidCtrl",
+                RobotInfo.ENCODER_Y_TOLERANCE, this::driveYPid);
+        vuforiaTurnPidCtrl = new TrcPidController(
+                "vuforiaTurnPidCtrl",
                 new TrcPidController.PidCoefficients(
-                        RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD),
-                RobotInfo.GYRO_TOLERANCE, this::drivePidHeading);
-        gyroPidCtrl.setAbsoluteSetPoint(true);
-        gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
+                        RobotInfo.VUFORIA_NAV_KP, RobotInfo.VUFORIA_NAV_KI, RobotInfo.VUFORIA_NAV_KD),
+                RobotInfo.VUFORIA_NAV_TOLERANCE, this::driveHeadingPid);
+        vuforiaTurnPidCtrl.setAbsoluteSetPoint(true);
+        vuforiaTurnPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
 
+        resetPID(); //Functionality moved to another function for resets while testing
 
-        pidDrive = new TrcPidDrive("pidDrive", driveBase,null, encoderYPidCtrl, gyroPidCtrl);
-        pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
-        pidDrive.setBeep(androidTone);
 
         TrcTaskMgr taskMgr = TrcTaskMgr.getInstance();
         taskMgr.createTask(InstanceName+".targetTask",this::targetTask);
@@ -131,9 +134,11 @@ public class VuforiaNavigator {
     public void headingTest_setTarget(float x, float y, TrcEvent doneEvent){
         xTarget = x;
         yTarget = y;
-        SKIP_TO_DONE = true;
         this.doneEvent = doneEvent;
         setNavState(NavState.TurnToTarget);
+        SKIP_TO_DONE = true;
+        trace.traceInfo("HeadingTest_setTarget","Called HeadingTest_setTarget (%3.1f,%3.1f)",x,y);
+
     }
 
     public void distanceTest_increaseDistance(float distance) {
@@ -144,9 +149,11 @@ public class VuforiaNavigator {
         headingTarget = lastHeading;
         xTarget = lastX+distance*(float)Math.cos(lastHeading);
         yTarget = lastY+distance*(float)Math.sin(lastHeading);
-        SKIP_TO_DONE = true;
         this.doneEvent = doneEvent;
         setNavState(NavState.DriveToTarget);
+        SKIP_TO_DONE = true;
+        trace.traceInfo("distanceTest_increaseDistance","Called distanceTest_increaseDistance (%3.1f)",distance);
+
     }
 
     public void headingTest_setHeading(float heading) {
@@ -155,15 +162,17 @@ public class VuforiaNavigator {
 
     public void headingTest_setHeading(float heading, TrcEvent doneEvent){
         headingTarget = heading;
-        SKIP_TO_DONE = true;
         this.doneEvent = doneEvent;
         setNavState(NavState.TurnToHeading);
+        SKIP_TO_DONE = true;
+        trace.traceInfo("headingTest_setHeading","Called headingTest_setHeading (%3.1f)",heading);
     }
 
 
-    private double driveYPidDistance(){
+    private double driveYPid(){
         float dist = getLinearDistanceFromTarget();
         if(navStateMachine.getState()==NavState.DriveToTarget){
+            trace.tracePrintf("driveYPid","Y PID called, dist is $3.3f",dist);
             if(dist>RobotInfo.VuforiaDrive_CloseEnoughMM) {
                 return dist;
             }else{
@@ -179,8 +188,9 @@ public class VuforiaNavigator {
         return (float)Math.hypot(xTarget - lastX,yTarget - lastY);
     }
 
-    private float drivePidHeading(){
+    private float driveHeadingPid(){
         NavState state = navStateMachine.getState();
+        trace.traceInfo("driveHeadingPid","Heading PID called, lastHeading is %3.3f (target %3.3f)",lastHeading,currentHeadingTarget);
         if(state!=NavState.Done) {  //Even when in "DriveToTarget" mode, we want to hold the heading steady.
             if (!headingCloseEnough()) {
                 return lastHeading;
@@ -227,6 +237,9 @@ public class VuforiaNavigator {
         navStateMachine.setState(newNavState);
         if(newNavState!=NavState.Done) {
             pidDrive.setTarget(0,currentHeadingTarget,true,event); //In all states but "Done" this exactly is needed.
+            if(pidDrive.isCanceled()){
+                trace.traceWarn("VuforiaNavigator.newNavState","PIDDrive is cancelled.");
+            }
             navStateMachine.waitForSingleEvent(event, nextState);
         }else{
             event.set(true);

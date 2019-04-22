@@ -72,7 +72,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
     TrcPidController encoderYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
     TrcPidController gyroPidCtrl = null;
-    TrcPidDrive pidDrive = null; //Proportional-Integral-Derivative.  Everyone's favorite control feedback loop, now for drive trains. (don't use)
 
 
     //Peripherals (extendoArm)
@@ -101,17 +100,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
             battery = new FtcRobotBattery();
         }
 
-        if (USE_VUFORIA) //We don't USE VUFORIA
-        {
-            dashboard.displayPrintf(1,"Initializing Vuforia");
-            int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
-            tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
-            dashboard.displayPrintf(3,"CamId %s",cameraViewId);
-            vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
-            vuforiaNavigator = new VuforiaNavigator("VuforiaNavigator",driveBase,vuforiaVision);
-            dashboard.displayPrintf(1,"Initialized Vuforia");
-        }
-
         dashboard.displayPrintf(2,"Loading up Peripherals.");
         //displayPrintf = print to a particular line in the display according to this format.  Values passed after the format are automatically interpolated
         //%s = insert string here.
@@ -125,25 +113,25 @@ public class Robot5611 implements FtcMenu.MenuButtons
         //We don't use the TRC wrapper motor library here like we do with the drive motors
         // the TRC go-to-position stuff wasn't working, so I cut past it and we use the default library stuff.
 
-        switch(runMode){
-            case AUTO_MODE:
-                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //Reset the motor to 0 before telling them to run to posiitons (otherwise it might go to 5094 right away if that's what it was supposed to go to before it was turned off before)
-                RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                break;
-            case DISABLED_MODE:
-            case TELEOP_MODE:
-            case TEST_MODE:
-                RoboLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid runMode");
-        }
+//        switch(runMode){
+//            case AUTO_MODE:
+//                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //Reset the motor to 0 before telling them to run to posiitons (otherwise it might go to 5094 right away if that's what it was supposed to go to before it was turned off before)
+//                RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//                rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                break;
+//            case DISABLED_MODE:
+//            case TELEOP_MODE:
+//            case TEST_MODE:
+//                RoboLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                break;
+//            default:
+//                throw new IllegalArgumentException("Invalid runMode");
+//        }
 
         leftWheel.setInverted(false); //One wheel is inverted because it's backwards on the robot (picture the motors to prove this to yourself)
         rightWheel.setInverted(true);
@@ -154,7 +142,16 @@ public class Robot5611 implements FtcMenu.MenuButtons
         driveBase = new TrcSimpleDriveBase(leftWheel, rightWheel);
         driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT); //We don't have a mecanum base at all, so "X" is redundant
 
-
+        if (USE_VUFORIA)
+        {
+            dashboard.displayPrintf(1,"Initializing Vuforia");
+            int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
+            dashboard.displayPrintf(3,"CamId %s",cameraViewId);
+            vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
+            vuforiaNavigator = new VuforiaNavigator("VuforiaNavigator",driveBase,vuforiaVision);
+            dashboard.displayPrintf(1,"Initialized Vuforia");
+        }
 
         ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
@@ -165,9 +162,11 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
     void startMode(TrcRobot.RunMode runMode)
     {
+        tracer.traceWarn("startMode","Oh boy Vuforia is about to get enabled");
         if (vuforiaVision != null)
         {
             vuforiaVision.setEnabled(true);
+            tracer.traceWarn("startMode","VuforiaVision enabled");
         }
 
     }   //startMode

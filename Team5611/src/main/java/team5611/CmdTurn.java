@@ -92,7 +92,7 @@ class CmdTurn implements TrcRobot.RobotCommand
                     break;
 
                 case TURN_FOR_DEGREES:
-                    robot.pidDrive.setTarget(0,turnDegrees,false,event);
+                    robot.vuforiaNavigator.pidDrive.setTarget(0,turnDegrees,false,event);
                     sm.waitForSingleEvent(event, State.DONE);
                      break;
                 case DONE:

@@ -72,6 +72,7 @@ public class VuforiaVision
         vuforia = new FtcVuforia(VUFORIA_LICENSE_KEY, cameraViewId, cameraDir);
         vuforia.configVideoSource(IMAGE_WIDTH, IMAGE_HEIGHT, FRAME_QUEUE_CAPACITY);
 
+
         /*
          * In order for localization to work, we need to tell the system where each target is on the field, and
          * where the phone resides on the robot. These specifications are in the form of <em>transformation matrices.</em>
@@ -214,5 +215,4 @@ public class VuforiaVision
                 orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
         return orientation;
     }   //getLocationOrientation
-
 }   //class VuforiaVision
