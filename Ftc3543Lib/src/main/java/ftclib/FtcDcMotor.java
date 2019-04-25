@@ -519,5 +519,4 @@ public class FtcDcMotor extends TrcMotor
 
         softUpperLimit = position;
     }   //setSoftUpperLimit
-
 }   //class FtcDcMotor

@@ -23,6 +23,7 @@
 package team5611;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.robot.Robot;
 
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -92,13 +93,15 @@ public class FtcTeleOpDrive extends FtcOpMode implements TrcGameController.Butto
     double lastCollectorPower;
     @Override
     public void runPeriodic(double elapsedTime) {
-        OpenGLMatrix location = this.robot.vuforiaVision.getRobotLocation();
-        if (location != null) {
-            VectorF translation = robot.vuforiaVision.getLocationTranslation(location);
-            robot.dashboard.displayPrintf(3, "Position:  x:  %4.2f, y:  %4.2f, z:  %4.2f", translation.get(0), translation.get(1), translation.get(2));
-            Orientation orientation = robot.vuforiaVision.getLocationOrientation(location).toAxesOrder(XYZ);
-            robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
-        }   //runPeriodic
+        if(Robot5611.USE_VUFORIA){
+            OpenGLMatrix location = this.robot.vuforiaVision.getRobotLocation();
+            if (location != null) {
+                VectorF translation = robot.vuforiaVision.getLocationTranslation(location);
+                robot.dashboard.displayPrintf(3, "Position:  x:  %4.2f, y:  %4.2f, z:  %4.2f", translation.get(0), translation.get(1), translation.get(2));
+                Orientation orientation = robot.vuforiaVision.getLocationOrientation(location).toAxesOrder(XYZ);
+                robot.dashboard.displayPrintf(4, "Orientation:  x:  %4.2f, y:  %4.2f, z:  %4.2f", orientation.firstAngle, orientation.secondAngle, orientation.thirdAngle);
+            }   //runPeriodic
+        }
         Controls.DriveArguments arguments = controls.getDrive();
         drivePowerScale = controls.turboMode()?1:0.75;
         switch(arguments.driveType){

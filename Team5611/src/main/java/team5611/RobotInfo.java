@@ -26,6 +26,12 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 class RobotInfo
 {
+    public static final double ENCODER_TICKS_PER_INCH = 1120 / (4 * Math.PI); //EncoderTicks per revolution / inches per revolution (aka circumference, aka diameter * pi)
+    //Left: 34.5 Right:  32.25 (4003/3998)
+    //Left: 34.55 Right:  33.75 (4004/3997)
+
+
+    public static final double WHEELBASE_INCHES = 17;
     //
     // DriveBase subsystem.
     //

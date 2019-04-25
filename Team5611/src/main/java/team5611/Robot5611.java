@@ -41,18 +41,19 @@ import ftclib.FtcRobotBattery;
 import ftclib.FtcServo;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
+import trclib.TrcEvent;
 import trclib.TrcGyro;
 import trclib.TrcMecanumDriveBase;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
 import trclib.TrcRobot;
 import trclib.TrcSimpleDriveBase;
+import trclib.TrcTaskMgr;
 import trclib.TrcWarpSpace;
 
 public class Robot5611 implements FtcMenu.MenuButtons
 {
-    static final boolean USE_SPEECH = true;
-    static final boolean USE_VUFORIA = true;
+    static final boolean USE_VUFORIA = false;
 
     private static final String moduleName = "Robot5611";
     //
@@ -64,7 +65,9 @@ public class Robot5611 implements FtcMenu.MenuButtons
     FtcRobotBattery battery = null; //Battery levels
     VuforiaVision vuforiaVision = null; //Don't use
     FtcAndroidTone androidTone; //Makes beeping sounds to tell you when bad stuff is happening.
-
+    TrcTaskMgr taskMgr;
+    TrcTaskMgr.TaskObject encoderMonitorTask;
+    TrcEvent encoderEvent;
 
     FtcDcMotor leftWheel = null;
     FtcDcMotor rightWheel = null;
@@ -73,7 +76,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
     TrcPidController encoderYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
     TrcPidController gyroPidCtrl = null;
     TrcPidDrive pidDrive = null; //Proportional-Integral-Derivative.  Everyone's favorite control feedback loop, now for drive trains. (don't use)
-
 
     //Peripherals (extendoArm)
     FtcDcMotor ExtendoRotator; //Rotates the entire collection arm back and forth
@@ -177,9 +179,13 @@ public class Robot5611 implements FtcMenu.MenuButtons
         ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
 
+        taskMgr = TrcTaskMgr.getInstance();
+        encoderMonitorTask = taskMgr.createTask("EncoderMonitor",this::checkEncoders);
+        setTaskEnabled(true);
 
         Collector = new FtcDcMotor(RobotInfo.CollectorMotorName);
     }   //Robot5611
+
 
     void startMode(TrcRobot.RunMode runMode)
     {
@@ -197,6 +203,14 @@ public class Robot5611 implements FtcMenu.MenuButtons
             vuforiaVision.setEnabled(false);
         }
     }   //stopMode
+
+    private void setTaskEnabled(boolean enabled){
+        if(enabled){
+            encoderMonitorTask.registerTask(TrcTaskMgr.TaskType.OUTPUT_TASK);
+        }else{
+            encoderMonitorTask.unregisterTask(TrcTaskMgr.TaskType.OUTPUT_TASK);
+        }
+    }
 
     void tankDrive(double left, double right){
         dashboard.displayPrintf(10,"Left:  %5.2f Right:  %5.2f",left, right);
@@ -253,6 +267,123 @@ public class Robot5611 implements FtcMenu.MenuButtons
                 battery==null ? 0 : battery.getVoltage(), battery==null ? 0 : battery.getLowestVoltage());
     }   //traceStateInfo
 
+    public void encoderTankDrive(int leftInches, int rightInches, double power, TrcEvent event) {
+        encoderTankDrive(leftInches, rightInches, power, event, false);
+    }
+
+    public void encoderTankDrive(int leftInches, int rightInches, double power, TrcEvent event, boolean inverted) {
+        driveBase.tankDrive(0,0);
+        leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftWheel.motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightWheel.motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        int leftTicks = (int)(leftInches*RobotInfo.ENCODER_TICKS_PER_INCH);
+        int rightTicks = (int)(rightInches*RobotInfo.ENCODER_TICKS_PER_INCH);
+
+        if(inverted){
+            int swap = leftTicks;
+            rightTicks = -leftTicks;
+            leftTicks = -swap;
+        }
+
+        tracer.traceInfo("encoderTankDrive","Encoder Tank Drive (L/R):  %s/%s", leftTicks, rightTicks);
+        leftWheel.motor.setTargetPosition(leftTicks);
+        rightWheel.motor.setTargetPosition(rightTicks);
+        leftWheel.motor.setPower((leftTicks>=0?1:-1)*power);
+        rightWheel.motor.setPower((rightTicks>=0?1:-1)*power);
+        encoderEvent = event;
+    }
+
+    /**
+     * This method drives the motors at "magnitude" and "curve". Both magnitude and curve are -1.0 to +1.0 values,
+     * where 0.0 represents stopped and not turning. curve less than 0 will turn left and curve greater than 0 will
+     * turn right. The algorithm for steering provides a constant turn radius for any normal speed range, both
+     * forward and backward. Increasing sensitivity causes sharper turns for fixed values of curve.
+     *  @param inches specifies the distance setting for the outside wheel in a turn, forward or backwards, +1 to -1.
+     * @param radius specifies the desired turning radius (the wheelbase used is preset for this robot)
+ * @param power
+ * @param event
+     */
+    public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event) {
+        encoderCurveDrive(inches, radius, power, event, false);
+    }
+
+    /**
+     * This method drives the motors at "magnitude" and "curve". Both magnitude and curve are -1.0 to +1.0 values,
+     * where 0.0 represents stopped and not turning. curve less than 0 will turn left and curve greater than 0 will
+     * turn right. The algorithm for steering provides a constant turn radius for any normal speed range, both
+     * forward and backward. Increasing sensitivity causes sharper turns for fixed values of curve.
+     *
+     * @param inches specifies the distance setting for the outside wheel in a turn, forward or backwards, +1 to -1.
+     * @param radius specifies the desired turning radius in inches (the wheelbase used is preset for this robot)
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     */
+    public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event, boolean inverted)
+    {
+        double leftOutput;
+        double rightOutput;
+        double curve = Math.pow(Math.E,-radius/RobotInfo.WHEELBASE_INCHES);
+
+        if (curve < 0.0)
+        {
+            double value = Math.log(-curve);
+            double ratio = (value - 0.5)/(value + 0.5);
+            if (ratio == 0.0)
+            {
+                ratio = 0.0000000001;
+            }
+            leftOutput = inches/ratio;
+            rightOutput = inches;
+        }
+        else if (curve > 0.0)
+        {
+            double value = Math.log(curve);
+            double ratio = (value - 0.5)/(value + 0.5);
+            if (ratio == 0.0)
+            {
+                ratio = 0.0000000001;
+            }
+            leftOutput = inches;
+            rightOutput = inches/ratio;
+        }
+        else
+        {
+            leftOutput = inches;
+            rightOutput = inches;
+        }
+
+        leftOutput*=RobotInfo.ENCODER_TICKS_PER_INCH;
+        rightOutput*= RobotInfo.ENCODER_TICKS_PER_INCH;
+
+        encoderTankDrive((int)leftOutput, (int)rightOutput, power, event, inverted);
+    }
+
+    public void stopMotors() {
+        leftWheel.motor.setPower(0);
+        rightWheel.motor.setPower(0);
+    }
+
+
+    public void checkEncoders(TrcTaskMgr.TaskType taskType, TrcRobot.RunMode runMode) {
+        if(encoderEvent!=null
+                &&!encoderEvent.isCanceled()
+                &&!encoderEvent.isSignaled()
+                &&!leftWheel.motor.isBusy()
+                &&!rightWheel.motor.isBusy())
+        {
+            encoderEvent.set(true);
+            leftWheel.motor.setPower(0);
+            rightWheel.motor.setPower(0);
+            leftWheel.motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            rightWheel.motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            tracer.tracePrintf("***STOPPING MOTORS***");
+        }
+        tracer.tracePrintf("Checking Encoders (L/R):  %s/%s",leftWheel.motor.getCurrentPosition(),rightWheel.motor.getCurrentPosition());
+    }
+
+
+
     //
     // Implements FtcMenu.MenuButtons interface.
     //
@@ -290,4 +421,13 @@ public class Robot5611 implements FtcMenu.MenuButtons
     {
         return opMode.gamepad1.dpad_left;
     }   //isMenuBackButton
+
+
+    public void encoderDriveTest(TrcEvent event) {
+        leftWheel.motor.setTargetPosition(-4000);
+        rightWheel.motor.setTargetPosition(-4000);
+        leftWheel.motor.setPower(-0.5);
+        rightWheel.motor.setPower(-0.5);
+        encoderEvent = event;
+    }
 }   //class Robot5611

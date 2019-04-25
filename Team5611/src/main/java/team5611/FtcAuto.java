@@ -37,35 +37,28 @@ public class FtcAuto extends FtcOpMode
 {
     private static final boolean USE_TRACELOG = true;
 
-    enum MatchType
-    {
-        PRACTICE,
-        QUALIFICATION,
-        SEMI_FINAL,
-        FINAL
-    }   //enum MatchType
-
     enum Alliance
     {
         RED_ALLIANCE,
         BLUE_ALLIANCE
     }   //enum Alliance
 
-    private enum Strategy
+    enum Strategy
     {
-//        FULL_AUTO,
-//        DISTANCE_DRIVE,
-//        TIMED_DRIVE,
-        TURN,
-        FULL_AUTO, DO_NOTHING
+        SIMPLE_AUTO,
+        ADJUSTED_AUTO,
+        DO_NOTHING,
+        FULL_AUTO
     }   //enum Strategy
+
+    enum FieldSide{
+        FRONT, BACK
+    }
 
     private static final String moduleName = "FtcAuto";
 
     private Robot5611 robot;
     private TrcRobot.RobotCommand autoCommand = null;
-    private MatchType matchType = MatchType.PRACTICE;
-    private int matchNumber = 0;
     private Alliance alliance = Alliance.RED_ALLIANCE;
     private double delay = 0.0;
     private Strategy strategy = Strategy.DO_NOTHING;
@@ -92,8 +85,7 @@ public class FtcAuto extends FtcOpMode
 
         if (USE_TRACELOG)
         {
-            String filePrefix = String.format("%s%02d", matchType, matchNumber);
-            robot.tracer.openTraceLog("/sdcard/FIRST/tracelog", filePrefix);
+            robot.tracer.openTraceLog("/sdcard/FIRST/tracelog");
         }
 
         //
@@ -102,9 +94,14 @@ public class FtcAuto extends FtcOpMode
         switch (strategy)
         {
             case FULL_AUTO:
-                autoCommand = new CmdAutoFull(robot, delay);
+                autoCommand = new CmdAutoFull(robot,delay);
                 break;
-
+            case SIMPLE_AUTO:
+                autoCommand = new CmdAutoSimple_Original(robot, delay);
+                break;
+            case ADJUSTED_AUTO:
+                autoCommand = new CmdAutoSimple(robot,delay);
+                break;
 //            case DISTANCE_DRIVE:
 //                autoCommand = new CmdPidDrive(
 //                        robot, robot.pidDrive, delay, 0.0, driveDistance*12.0, 0.0);
@@ -113,9 +110,6 @@ public class FtcAuto extends FtcOpMode
 //            case TIMED_DRIVE:
 //                autoCommand = new CmdTimedDrive(robot, delay, driveTime, 0.0, drivePower, 0.0);
 //                break;
-            case TURN:
-                autoCommand = new CmdTurn(robot,1,turnDegrees);
-                break;
             case DO_NOTHING:
             default:
                 autoCommand = null;
@@ -165,63 +159,41 @@ public class FtcAuto extends FtcOpMode
 //        FtcValueMenu matchNumberMenu = new FtcValueMenu(
 //                "Match number:", matchTypeMenu, robot,
 //                1.0, 50.0, 1.0, 1.0, "%.0f");
+
+        FtcChoiceMenu<Strategy> strategyMenu = new FtcChoiceMenu<>("Strategies:", null, robot);
         FtcChoiceMenu<Alliance> allianceMenu = new FtcChoiceMenu<>("Alliance:", null, robot);
         FtcValueMenu delayMenu = new FtcValueMenu(
-                "Delay time:", allianceMenu, robot,
+                "Delay time:", null, robot,
                 0.0, 30.0, 1.0, 0.0, " %.0f sec");
-        FtcChoiceMenu<Strategy> strategyMenu = new FtcChoiceMenu<>("Strategies:", delayMenu, robot);
-        FtcValueMenu turnDegreesMenu = new FtcValueMenu("Degrees:", strategyMenu, robot, -360,360, 5, 90, "%.0f°");
-//        FtcValueMenu driveDistanceMenu = new FtcValueMenu(
-//                "Distance:", strategyMenu, robot,
-//                -12.0, 12.0, 0.5, 4.0, " %.0f ft");
-//        FtcValueMenu driveTimeMenu = new FtcValueMenu(
-//                "Drive time:", strategyMenu, robot, 0.0, 30.0, 1.0, 5.0, " %.0f sec");
-//        FtcValueMenu drivePowerMenu = new FtcValueMenu(
-//                "Drive power:", strategyMenu, robot, -1.0, 1.0, 0.1, 0.5, " %.1f");
+        FtcChoiceMenu<FieldSide> fieldSideMenu = new FtcChoiceMenu<>("Field Side:",null, robot);
 
-//        matchNumberMenu.setChildMenu(allianceMenu);
-//        driveTimeMenu.setChildMenu(drivePowerMenu);
-        delayMenu.setChildMenu(strategyMenu);
+        strategyMenu.addChoice("Full Autonomous",Strategy.FULL_AUTO,true, allianceMenu);
+        strategyMenu.addChoice("Simple Autonomous",Strategy.SIMPLE_AUTO,true, delayMenu);
+        strategyMenu.addChoice("Adjusted Simple Autonomous", Strategy.ADJUSTED_AUTO, false, delayMenu);
+        strategyMenu.addChoice("Do nothing", Strategy.DO_NOTHING, false, delayMenu);
 
-        //
-        // Populate choice menus.
-        //
-//        matchTypeMenu.addChoice("Practice", MatchType.PRACTICE, true, matchNumberMenu);
-//        matchTypeMenu.addChoice("Qualification", MatchType.QUALIFICATION, false, matchNumberMenu);
-//        matchTypeMenu.addChoice("Semi-final", MatchType.SEMI_FINAL, false, matchNumberMenu);
-//        matchTypeMenu.addChoice("Final", MatchType.FINAL, false, matchNumberMenu);
+//        delayMenu.setChildMenu(strategyMenu);
 
-        allianceMenu.addChoice("Red", Alliance.RED_ALLIANCE, true, delayMenu);
-        allianceMenu.addChoice("Blue", Alliance.BLUE_ALLIANCE, false, delayMenu);
+        allianceMenu.addChoice("Red", Alliance.RED_ALLIANCE, true, fieldSideMenu);
+        allianceMenu.addChoice("Blue", Alliance.BLUE_ALLIANCE, false, fieldSideMenu);
 
-//        strategyMenu.addChoice("Full Auto", Strategy.FULL_AUTO, true);
-//        strategyMenu.addChoice("Distance Drive", Strategy.DISTANCE_DRIVE, false, driveDistanceMenu);
-//        strategyMenu.addChoice("Timed Drive", Strategy.TIMED_DRIVE, false, driveTimeMenu);
-        strategyMenu.addChoice("Full Autonomous",Strategy.FULL_AUTO,true);
-        strategyMenu.addChoice("Turn", Strategy.TURN, false,turnDegreesMenu);
-        strategyMenu.addChoice("Do nothing", Strategy.DO_NOTHING, false);
+        fieldSideMenu.addChoice("Front", FieldSide.FRONT, true, delayMenu);
+        fieldSideMenu.addChoice("Back", FieldSide.BACK, false, delayMenu);
 
         //
         // Traverse menus.
         //
-        FtcMenu.walkMenuTree(allianceMenu);
+        FtcMenu.walkMenuTree(strategyMenu);
         //
         // Fetch choices.
         //
-//        matchType = matchTypeMenu.getCurrentChoiceObject();
-//        matchNumber = (int)matchNumberMenu.getCurrentValue();
-        alliance = allianceMenu.getCurrentChoiceObject();
         delay = delayMenu.getCurrentValue();
         strategy = strategyMenu.getCurrentChoiceObject();
-        turnDegrees = turnDegreesMenu.getCurrentValue();
-//        driveDistance = driveDistanceMenu.getCurrentValue();
-//        driveTime = driveTimeMenu.getCurrentValue();
-//        drivePower = drivePowerMenu.getCurrentValue();
+        alliance = allianceMenu.getCurrentChoiceObject();
         //
         // Show choices.
         //
-        robot.dashboard.displayPrintf(1, "== Match: %s ==",
-                                      matchType.toString() + "_" + matchNumber);
+        robot.dashboard.displayPrintf(1, "== Match ==");
         robot.dashboard.displayPrintf(2, "Auto Strategy: %s", strategyMenu.getCurrentChoiceText());
         robot.dashboard.displayPrintf(3, "Alliance=%s,Delay=%.0f sec", alliance.toString(), delay);
 //        robot.dashboard.displayPrintf(4, "Drive: distance=%.0f ft,Time=%.0f,Power=%.1f",

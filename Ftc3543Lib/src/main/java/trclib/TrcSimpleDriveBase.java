@@ -29,6 +29,9 @@ package trclib;
  */
 public class TrcSimpleDriveBase extends TrcDriveBase
 {
+    public void encoderTankDrive(int leftInches, int rightInches) {
+    }
+
     public enum MotorType
     {
         LEFT_FRONT(0),
