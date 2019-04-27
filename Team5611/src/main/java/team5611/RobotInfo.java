@@ -24,6 +24,16 @@ package team5611;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
+import trclib.TrcUtil;
+
+import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XZY;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
+import static trclib.TrcUtil.*;
+
 class RobotInfo
 {
     public static final double ENCODER_TICKS_PER_INCH = 1120 / (4 * Math.PI); //EncoderTicks per revolution / inches per revolution (aka circumference, aka diameter * pi)
@@ -50,13 +60,23 @@ class RobotInfo
     static final double ENCODER_Y_KD                    = 0.0022;
     static final double ENCODER_Y_TOLERANCE             = 1.0;
     static final double ENCODER_Y_INCHES_PER_COUNT      = 68.0/4100.5;
+//    static final double VUFORIA_NAV_Y_KP                    = 0.047;
+//    static final double VUFORIA_NAV_Y_KI                    = 0.0;
+//    static final double VUFORIA_NAV_Y_KD                    = 0.0052;
+//    static final double VUFORIA_NAV_Y_TOLERANCE             = 5;
 
-    static final double GYRO_KP                         = 0.018;
-    static final double GYRO_KI                         = 0.0;
-    static final double GYRO_KD                         = 0.002;
-    static final double GYRO_TOLERANCE                  = 1.0;
 
-    static final double PIDDRIVE_STALL_TIMEOUT          = 0.25;     //in msec.
+//    static final double GYRO_KP                         = 0.1;
+//    static final double GYRO_KI                         = 0.0;
+//    static final double GYRO_KD                         = 0.002;
+//    static final double GYRO_TOLERANCE                  = 1.0;
+    static final double VUFORIA_NAV_KP                         = 5;
+    static final double VUFORIA_NAV_KI                         = 0.0;
+    static final double VUFORIA_NAV_KD                         = 0.2;
+    static final double VUFORIA_NAV_TOLERANCE                  = 1.0;
+
+
+    static final double PIDDRIVE_STALL_TIMEOUT          = 1;     //in sec.
 
     static final String RightMotorName = "RMotor";
     static final String LeftMotorName  = "LMotor";
@@ -64,6 +84,14 @@ class RobotInfo
     static final String ExtendorMotorName = "ExtendorMotor";
     static final String RoboLiftMotorName = "RoboLiftMotor";
     static final String CollectorMotorName = "CollectorMotor";
+
+    static final OpenGLMatrix VuforiaCameraRotation = Orientation.getRotationMatrix(
+            EXTRINSIC, XZY,
+            DEGREES, 90, 90, 0);
+    static final float VuforiaDrive_CloseEnoughInches = 2;
+    static final float VuforiaDrive_CloseEnoughDegrees = 10;
+
+    static final float VuforiaDrive_CloseEnoughMM = VuforiaDrive_CloseEnoughInches* (float) MM_PER_INCH;
 //    static final String RightBackMotorName = "RBMotor";
 //    static final String LeftBackMotorName = "LBMotor";
 

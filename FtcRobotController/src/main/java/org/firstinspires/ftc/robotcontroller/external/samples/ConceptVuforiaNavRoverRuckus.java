@@ -44,6 +44,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XZY;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
@@ -92,7 +93,7 @@ import java.util.List;
  */
 
 @TeleOp(name="Concept: Vuforia Rover Nav", group ="Concept")
-@Disabled
+//@Disabled
 public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
 
     /*
@@ -107,14 +108,7 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
      * Once you've obtained a license key, copy the string from the Vuforia web site
      * and paste it in to your code on the next line, between the double quotes.
      */
-    private static final String VUFORIA_KEY = "AaXobyf/////AAABmf2229UqeE0Glf90ORMEc7+MsrR1FfF0gydPcpd" +
-            "8rUew1njTJbXa6Nc6s1+GJEKltYEXkRLE4kp8QWmKMVQoIw+e" +
-            "9zcQ6IqFfx5a4LItqtRY+j1gJStDQf8tui4Gjr2/hKPW3Z6CT/" +
-            "Xy2Aq45DcT+s3UYd83YtsNOW55gxqwTmKM0KmNnr+nk6Z7K9i0" +
-            "XtplQhF/HjZsOrBxCfPch/dQ+v/SrOIbuvPRVPUncu5+drw0vw" +
-            "kGG4lhM0vt/KPv7GEWYUChSJYHgXZ5+GkuQuWLTYVgkEKfriT+" +
-            "6S7Lx4XoHpyOgNSnxgg+F6UBWHzkTlQLDC40zfRwdGmWh8Z8ao" +
-            "y+AGK0ZKLQQZu4/40ytpXpTNQ2";
+    private static final String VUFORIA_KEY = "AaXobyf/////AAABmf2229UqeE0Glf90ORMEc7+MsrR1FfF0gydPcpd8rUew1njTJbXa6Nc6s1+GJEKltYEXkRLE4kp8QWmKMVQoIw+e9zcQ6IqFfx5a4LItqtRY+j1gJStDQf8tui4Gjr2/hKPW3Z6CT/Xy2Aq45DcT+s3UYd83YtsNOW55gxqwTmKM0KmNnr+nk6Z7K9i0XtplQhF/HjZsOrBxCfPch/dQ+v/SrOIbuvPRVPUncu5+drw0vwkGG4lhM0vt/KPv7GEWYUChSJYHgXZ5+GkuQuWLTYVgkEKfriT+6S7Lx4XoHpyOgNSnxgg+F6UBWHzkTlQLDC40zfRwdGmWh8Z8aoy+AGK0ZKLQQZu4/40ytpXpTNQ2";
 
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
@@ -124,7 +118,7 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
 
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
     // Valid choices are:  BACK or FRONT
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = FRONT;
 
     private OpenGLMatrix lastLocation = null;
     private boolean targetVisible = false;
@@ -257,14 +251,15 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+        final float CAMERA_FORWARD_DISPLACEMENT  = 0.5f*mmPerInch;   // eg: Camera is 0.5 in in front of robot center
+        final float CAMERA_VERTICAL_DISPLACEMENT = 14.25f*mmPerInch;   // eg: Camera is 14.25 in above ground
+        final float CAMERA_LEFT_DISPLACEMENT     = -5*mmPerInch;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
-                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));
+                .multiplied(Orientation.getRotationMatrix(
+                        EXTRINSIC, XZY,
+                        DEGREES, 90, 90, 0)); //SECOND ANGLE MAY BE POSITIVE -Lucas
 
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)

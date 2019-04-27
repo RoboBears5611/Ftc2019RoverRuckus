@@ -57,6 +57,7 @@ import trclib.TrcVideoSource;
  */
 public class FtcVuforia implements TrcVideoSource<Mat>
 {
+
     /**
      * This class contains information about a trackable target.
      */

@@ -41,7 +41,7 @@ import ftclib.FtcRobotBattery;
 import ftclib.FtcServo;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
-import trclib.TrcEvent;
+@import trclib.TrcEvent;
 import trclib.TrcGyro;
 import trclib.TrcMecanumDriveBase;
 import trclib.TrcPidController;
@@ -56,6 +56,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
     static final boolean USE_VUFORIA = false;
 
     private static final String moduleName = "Robot5611";
+    public VuforiaNavigator vuforiaNavigator;
     //
     // Global objects.
     //
@@ -64,7 +65,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
     TrcDbgTrace tracer; //Fancy utility to spit stuff out to the logs.  You can see these logs through "logcat" when you're connected remotely (see README.txt)
     FtcRobotBattery battery = null; //Battery levels
     VuforiaVision vuforiaVision = null; //Don't use
-    FtcAndroidTone androidTone; //Makes beeping sounds to tell you when bad stuff is happening.
     TrcTaskMgr taskMgr;
     TrcTaskMgr.TaskObject encoderMonitorTask;
     TrcEvent encoderEvent;
@@ -75,7 +75,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
     TrcPidController encoderYPidCtrl = null; //Takes over default encoder logic, I guess for when you have really complicated drive systems.  We don't.  We don't actually use these
     TrcPidController gyroPidCtrl = null;
-    TrcPidDrive pidDrive = null; //Proportional-Integral-Derivative.  Everyone's favorite control feedback loop, now for drive trains. (don't use)
 
     //Peripherals (extendoArm)
     FtcDcMotor ExtendoRotator; //Rotates the entire collection arm back and forth
@@ -102,17 +101,6 @@ public class Robot5611 implements FtcMenu.MenuButtons
         }else{
             battery = new FtcRobotBattery();
         }
-        androidTone = new FtcAndroidTone("AndroidTone");
-
-        if (USE_VUFORIA) //We don't USE VUFORIA
-        {
-            dashboard.displayPrintf(1,"Initializing Vuforia");
-            int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
-            tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
-            dashboard.displayPrintf(3,"CamId %s",cameraViewId);
-            vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
-            dashboard.displayPrintf(1,"Initialized Vuforia");
-        }
 
         dashboard.displayPrintf(2,"Loading up Peripherals.");
         //displayPrintf = print to a particular line in the display according to this format.  Values passed after the format are automatically interpolated
@@ -127,25 +115,25 @@ public class Robot5611 implements FtcMenu.MenuButtons
         //We don't use the TRC wrapper motor library here like we do with the drive motors
         // the TRC go-to-position stuff wasn't working, so I cut past it and we use the default library stuff.
 
-        switch(runMode){
-            case AUTO_MODE:
-                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //Reset the motor to 0 before telling them to run to posiitons (otherwise it might go to 5094 right away if that's what it was supposed to go to before it was turned off before)
-                RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                break;
-            case DISABLED_MODE:
-            case TELEOP_MODE:
-            case TEST_MODE:
-                RoboLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid runMode");
-        }
+//        switch(runMode){
+//            case AUTO_MODE:
+//                RoboLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //Reset the motor to 0 before telling them to run to posiitons (otherwise it might go to 5094 right away if that's what it was supposed to go to before it was turned off before)
+//                RoboLift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//                rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                break;
+//            case DISABLED_MODE:
+//            case TELEOP_MODE:
+//            case TEST_MODE:
+//                RoboLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//                leftWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                rightWheel.motor.setMode(RobotInfo.DRIVE_MOTOR_MODE);
+//                break;
+//            default:
+//                throw new IllegalArgumentException("Invalid runMode");
+//        }
 
         leftWheel.setInverted(false); //One wheel is inverted because it's backwards on the robot (picture the motors to prove this to yourself)
         rightWheel.setInverted(true);
@@ -155,26 +143,17 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
         driveBase = new TrcSimpleDriveBase(leftWheel, rightWheel);
         driveBase.setPositionScales(RobotInfo.ENCODER_X_INCHES_PER_COUNT, RobotInfo.ENCODER_Y_INCHES_PER_COUNT); //We don't have a mecanum base at all, so "X" is redundant
-        //
-        // Initialize PID drive. (we don't use it, I couldn't get it to work)
-        //
-        encoderYPidCtrl = new TrcPidController(
-                "encoderYPidCtrl",
-                new TrcPidController.PidCoefficients(
-                        RobotInfo.ENCODER_Y_KP, RobotInfo.ENCODER_Y_KI, RobotInfo.ENCODER_Y_KD),
-                RobotInfo.ENCODER_Y_TOLERANCE, () -> driveBase.getYPosition());
-        gyroPidCtrl = new TrcPidController(
-                "gyroPidCtrl",
-                new TrcPidController.PidCoefficients(
-                        RobotInfo.GYRO_KP, RobotInfo.GYRO_KI, RobotInfo.GYRO_KD),
-                RobotInfo.GYRO_TOLERANCE, () -> driveBase.getHeading());
-        gyroPidCtrl.setAbsoluteSetPoint(true);
-        gyroPidCtrl.setOutputRange(-RobotInfo.TURN_POWER_LIMIT, RobotInfo.TURN_POWER_LIMIT);
 
-
-        pidDrive = new TrcPidDrive("pidDrive", driveBase,null, encoderYPidCtrl, gyroPidCtrl);
-        pidDrive.setStallTimeout(RobotInfo.PIDDRIVE_STALL_TIMEOUT);
-        pidDrive.setBeep(androidTone);
+        if (USE_VUFORIA)
+        {
+            dashboard.displayPrintf(1,"Initializing Vuforia");
+            int cameraViewId = opMode.hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", opMode.hardwareMap.appContext.getPackageName());
+            tracer.tracePrintf("CameraMonititorViewId:  %s",cameraViewId);
+            dashboard.displayPrintf(3,"CamId %s",cameraViewId);
+            vuforiaVision = new VuforiaVision(this, cameraViewId, VuforiaLocalizer.CameraDirection.FRONT,new OpenGLMatrix());//cameraViewId);
+            vuforiaNavigator = new VuforiaNavigator("VuforiaNavigator",driveBase,vuforiaVision);
+            dashboard.displayPrintf(1,"Initialized Vuforia");
+        }
 
         ExtendoRotator = new FtcDcMotor(RobotInfo.ExtendoRotatorMotorName);
         Extendor = new FtcDcMotor(RobotInfo.ExtendorMotorName);
@@ -189,9 +168,11 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
     void startMode(TrcRobot.RunMode runMode)
     {
+        tracer.traceWarn("startMode","Oh boy Vuforia is about to get enabled");
         if (vuforiaVision != null)
         {
             vuforiaVision.setEnabled(true);
+            tracer.traceWarn("startMode","VuforiaVision enabled");
         }
 
     }   //startMode
