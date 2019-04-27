@@ -244,7 +244,7 @@ public abstract class FtcMenu
 
         setRootMenu(rootMenu);
         rootMenu.displayMenu();
-        while (!runMenus() && !opmode.isStopRequested())
+        while (!opmode.isStarted())
         {
             TrcUtil.sleep(LOOP_INTERVAL);
         }

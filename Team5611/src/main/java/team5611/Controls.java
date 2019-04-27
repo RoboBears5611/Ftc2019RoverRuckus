@@ -16,8 +16,8 @@ public abstract class Controls {
         public DriveArguments(){};
         public DriveArguments(DriveType driveType, double leftOrY, double rightOrTurn){
             this.driveType=driveType;
-            this.leftOrY = leftOrY;
-            this.rightOrTurn = rightOrTurn;
+            this.leftOrY = -leftOrY;
+            this.rightOrTurn = -rightOrTurn;
         }
         DriveType driveType;
         double leftOrY;

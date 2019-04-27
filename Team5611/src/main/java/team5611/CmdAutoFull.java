@@ -33,20 +33,22 @@ import trclib.TrcTimer;
 
 class CmdAutoFull implements TrcRobot.RobotCommand
 {
+    private static final int DriveAndLowerTicks = 1550;
+
     private enum State
     {
         DO_DELAY,
+        START_LOWER_FROM_LANDER,
         LOWER_FROM_LANDER,
+        LOWER_AND_DRIVE_LANDER,
         DRIVE_FROM_LANDER,
-        DRIVE_TO_SAMPLE_FIELD,
-
-        FIND_GOLD_SAMPLE,
-        SHOVE_GOLD_SAMPLE,
-        BACK_UP_FOR_FINDING_VUFORIA,
-        READ_VURFORIA_TARGET_FOR_FLAG,
-        DRIVE_TO_DROP_ZONE,
-        DEPOSIT_FLAG,
-        START_LOWER_FROM_LANDER, DONE
+        TURN_TO_DEPOT,
+        DRIVE_TO_DEPOT,
+        CLAIM_DEPOT,
+        DEPOSIT_MARKER,
+        RETRACT_FROM_DEPOT,
+        DRIVE_FROM_DEPOT,
+        EXTEND_ARM, DONE
     }   //enum State
 
     private static final String moduleName = "CmdTimedDrive";
@@ -67,6 +69,9 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         sm.start(State.DO_DELAY);
     }   //CmdTimedDrive
 
+
+    boolean firstIteration = false;
+    State lastState = State.DONE;
     //
     // Implements the TrcRobot.AutoStrategy interface.
     //
@@ -79,12 +84,17 @@ class CmdAutoFull implements TrcRobot.RobotCommand
         // Print debug info.
         //
         State state = sm.getState();
+        if(state!=lastState){
+            robot.tracer.traceInfo("cmdPeriodic","New State:  %s",state);
+            firstIteration = true;
+        }else{
+            firstIteration = false;
+        }
+        lastState = state;
         robot.dashboard.displayPrintf(1, "State: %s", state != null? state.toString(): "Disabled");
 
         if (sm.isReady()) //This will be "no" if the state machine is disabled, or if it's waiting for an event.
         {
-            state = sm.getState(); //Gets the current state.  We can change the state to whatever state we want from any other state.
-
             switch (state)
             {
                 case DO_DELAY:
@@ -112,14 +122,49 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                         sm.setState(State.DRIVE_FROM_LANDER); //move on!
                     }
                     break;
+                case LOWER_AND_DRIVE_LANDER:
+                    if(firstIteration){
+                        robot.roboLift(0.5);
+                        robot.roboLiftTicks(DriveAndLowerTicks);
+                        robot.tankDrive(0.2,0.2);
+                    }else if(robot.roboLiftOnTarget()){
+                        robot.roboLift(0);
+                        sm.setState(State.DRIVE_FROM_LANDER);
+                    }
+                    break;
                 case DRIVE_FROM_LANDER: //STEP THREE:  DRIVE A VERY SHORT WAYS
 //                    robot.arcadeDrive(-0.25,0);
 //                    robot.driveBase.arcadeDrive(-0.35,0); //'arcade drive" uses power and turn (between -1 and 1) to drive ('tank drive' uses left and right wheel powers)
 //                    timer.set(0.5,event); //Fire this event after half a second)
 //                    robot.encoderTankDrive(5,5,0.75,event);
                     event.clear();
-                    robot.encoderDriveTest(event);
-                    sm.waitForSingleEvent(event,State.DONE); //When this event fires, move on to "Done"
+                    robot.encoderTankDrive(6,6,0.5,event, false);
+                    sm.waitForSingleEvent(event,State.TURN_TO_DEPOT); //When this event fires, move on to "Done"
+                    break;
+                case TURN_TO_DEPOT:
+                    event.clear();
+                    robot.encoderTankDrive(13.35,-13.35,0.5,event);
+                    sm.waitForSingleEvent(event, State.EXTEND_ARM);
+                    break;
+                case EXTEND_ARM:
+                    robot.extendoArm(1,1);
+                    event.clear();
+                    timer.set(2,event);
+                    sm.waitForSingleEvent(event,State.DONE);
+                    break;
+
+//                case DRIVE_TO_DEPOT:
+//                    event.clear();
+//                    robot.encoderTankDrive(36,36,0.75,event);
+//                    sm.waitForSingleEvent(event, State.CLAIM_DEPOT);
+//                    break;
+//                case CLAIM_DEPOT:
+//                    event.clear();
+//                    robot.extendoArm(1,-1);
+//                    timer.set(5,event);
+//                    sm.waitForSingleEvent(event, State.DONE);
+//                    break;
+                case RETRACT_FROM_DEPOT:
                     break;
                 case DONE: //STEP FOUR:  DO NOTHING
                 default:
@@ -127,7 +172,7 @@ class CmdAutoFull implements TrcRobot.RobotCommand
                     // We are done.
                     //
                     robot.stopMotors();
-                    robot.tracer.traceInfo("cmdPeriodic","Actual Positions (L/R):  %s/%s",robot.leftWheel.motor.getCurrentPosition(),robot.rightWheel.motor.getCurrentPosition());
+                    robot.extendoArm(0,0);
                     done = true;
                     sm.stop(); //tell the state machine we're done.
                     break;

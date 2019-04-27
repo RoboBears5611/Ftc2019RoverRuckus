@@ -214,7 +214,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
 
     void tankDrive(double left, double right){
         dashboard.displayPrintf(10,"Left:  %5.2f Right:  %5.2f",left, right);
-        driveBase.tankDrive(left, right);
+        driveBase.tankDrive(-left, -right);
     }
     void arcadeDrive(double y, double turn) {
         driveBase.arcadeDrive(y,turn);
@@ -267,15 +267,21 @@ public class Robot5611 implements FtcMenu.MenuButtons
                 battery==null ? 0 : battery.getVoltage(), battery==null ? 0 : battery.getLowestVoltage());
     }   //traceStateInfo
 
-    public void encoderTankDrive(int leftInches, int rightInches, double power, TrcEvent event) {
-        encoderTankDrive(leftInches, rightInches, power, event, false);
+    public void encoderTankDrive(double leftInches, double rightInches, double power, TrcEvent event) {
+        encoderTankDrive(leftInches, rightInches, power, event, true);
+    }
+    public void encoderTankDrive(double leftInches, double rightInches, double power, TrcEvent event, boolean reset){
+        encoderTankDrive(leftInches, rightInches, power, event, reset, false);
     }
 
-    public void encoderTankDrive(int leftInches, int rightInches, double power, TrcEvent event, boolean inverted) {
+
+    public void encoderTankDrive(double leftInches, double rightInches, double power, TrcEvent event, boolean reset, boolean inverted) {
         driveBase.tankDrive(0,0);
-        leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if(reset){
+            leftWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
         leftWheel.motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightWheel.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightWheel.motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         int leftTicks = (int)(leftInches*RobotInfo.ENCODER_TICKS_PER_INCH);
@@ -306,7 +312,21 @@ public class Robot5611 implements FtcMenu.MenuButtons
  * @param event
      */
     public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event) {
-        encoderCurveDrive(inches, radius, power, event, false);
+        encoderCurveDrive(inches, radius, power, event, true);
+    }
+
+    /**
+     * This method drives the motors at "magnitude" and "curve". Both magnitude and curve are -1.0 to +1.0 values,
+     * where 0.0 represents stopped and not turning. curve less than 0 will turn left and curve greater than 0 will
+     * turn right. The algorithm for steering provides a constant turn radius for any normal speed range, both
+     * forward and backward. Increasing sensitivity causes sharper turns for fixed values of curve.
+     *  @param inches specifies the distance setting for the outside wheel in a turn, forward or backwards, +1 to -1.
+     * @param radius specifies the desired turning radius (the wheelbase used is preset for this robot)
+     * @param power
+     * @param event
+     */
+    public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event, boolean reset) {
+        encoderCurveDrive(inches, radius, power, event, reset,false);
     }
 
     /**
@@ -319,7 +339,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
      * @param radius specifies the desired turning radius in inches (the wheelbase used is preset for this robot)
      * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
      */
-    public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event, boolean inverted)
+    public void encoderCurveDrive(double inches, double radius, double power, TrcEvent event, boolean reset, boolean inverted)
     {
         double leftOutput;
         double rightOutput;
@@ -356,7 +376,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
         leftOutput*=RobotInfo.ENCODER_TICKS_PER_INCH;
         rightOutput*= RobotInfo.ENCODER_TICKS_PER_INCH;
 
-        encoderTankDrive((int)leftOutput, (int)rightOutput, power, event, inverted);
+        encoderTankDrive((int)leftOutput, (int)rightOutput, power, event, reset, inverted);
     }
 
     public void stopMotors() {
@@ -379,7 +399,7 @@ public class Robot5611 implements FtcMenu.MenuButtons
             rightWheel.motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             tracer.tracePrintf("***STOPPING MOTORS***");
         }
-        tracer.tracePrintf("Checking Encoders (L/R):  %s/%s",leftWheel.motor.getCurrentPosition(),rightWheel.motor.getCurrentPosition());
+        tracer.tracePrintf("Drive Encoders (L/R)- Target:  %s/%s Actual: %s/%s",leftWheel.motor.getTargetPosition(),rightWheel.motor.getTargetPosition(),leftWheel.motor.getCurrentPosition(),rightWheel.motor.getCurrentPosition());
     }
 
 
@@ -422,12 +442,4 @@ public class Robot5611 implements FtcMenu.MenuButtons
         return opMode.gamepad1.dpad_left;
     }   //isMenuBackButton
 
-
-    public void encoderDriveTest(TrcEvent event) {
-        leftWheel.motor.setTargetPosition(-4000);
-        rightWheel.motor.setTargetPosition(-4000);
-        leftWheel.motor.setPower(-0.5);
-        rightWheel.motor.setPower(-0.5);
-        encoderEvent = event;
-    }
 }   //class Robot5611

@@ -39,14 +39,6 @@ class CmdAutoSimple implements TrcRobot.RobotCommand
         LOWER_AND_DRIVE_LANDER,
         DRIVE_FROM_LANDER,
         CHUCK_TEAM_BALL,
-        READ_VUFORIA_TARGET_FOR_SAMPLES, //These states were never used
-        DRIVE_TO_SAMPLE_FIELD,
-        FIND_GOLD_SAMPLE,
-        SHOVE_GOLD_SAMPLE,
-        BACK_UP_FOR_FINDING_VUFORIA,
-        READ_VURFORIA_TARGET_FOR_FLAG,
-        DRIVE_TO_DROP_ZONE,
-        DEPOSIT_FLAG,
          DONE
     }   //enum State
 
@@ -114,7 +106,7 @@ class CmdAutoSimple implements TrcRobot.RobotCommand
                     break;
                 case START_LOWER_FROM_LANDER: //STEP ONE:  START LOWERING THE LIFT
                     robot.roboLift(1); //You have to set the power to what you want it to move at, otherwise it won't move at all.
-                    robot.roboLiftTicks(5400 - DriveAndLowerTicks);
+                    robot.roboLiftTicks(5800 - DriveAndLowerTicks);
                     sm.setState(State.LOWER_FROM_LANDER); //Immediately set the next state to step two.  This step will not happen until the hardware has gone
                     // through a complete update cycle. (i.e., this function has completed and started again)
 
@@ -129,7 +121,7 @@ class CmdAutoSimple implements TrcRobot.RobotCommand
                     if(firstIteration){
                         robot.roboLift(0.5);
                         robot.roboLiftTicks(DriveAndLowerTicks);
-                        robot.tankDrive(-0.2,-0.2);
+                        robot.tankDrive(0.2,0.2);
                     }else if(robot.roboLiftOnTarget()){
                         robot.roboLift(0);
                         sm.setState(State.DRIVE_FROM_LANDER);
