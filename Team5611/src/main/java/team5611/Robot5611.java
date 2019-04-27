@@ -24,32 +24,23 @@ package team5611;
 
 import android.widget.TextView;
 
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcontroller.internal.FtcRobotControllerActivity;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 
-import ftclib.FtcAndroidTone;
-import ftclib.FtcBNO055Imu;
 import ftclib.FtcDcMotor;
 import ftclib.FtcMenu;
 import ftclib.FtcOpMode;
 import ftclib.FtcRobotBattery;
-import ftclib.FtcServo;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
-@import trclib.TrcEvent;
-import trclib.TrcGyro;
-import trclib.TrcMecanumDriveBase;
+import trclib.TrcEvent;
 import trclib.TrcPidController;
-import trclib.TrcPidDrive;
 import trclib.TrcRobot;
 import trclib.TrcSimpleDriveBase;
 import trclib.TrcTaskMgr;
-import trclib.TrcWarpSpace;
 
 public class Robot5611 implements FtcMenu.MenuButtons
 {

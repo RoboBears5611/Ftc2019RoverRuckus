@@ -150,7 +150,7 @@ class CmdAutoSimple implements TrcRobot.RobotCommand
             }
             robot.traceStateInfo(elapsedTime, state.toString(), robot.driveBase.getXPosition(), robot.driveBase.getYPosition(), robot.driveBase.getHeading()); //Spit some location and state info to the debug logs
 
-            if (robot.pidDrive.isActive())
+            if (robot.vuforiaNavigator.pidDrive.isActive())
             {
                 robot.tracer.traceInfo("Battery", "Voltage=%5.2fV (%5.2fV)", //Spit more info to the logs
                         robot.battery.getVoltage(), robot.battery.getLowestVoltage());
